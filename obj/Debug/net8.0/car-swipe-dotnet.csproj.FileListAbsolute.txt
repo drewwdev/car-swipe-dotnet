@@ -133,3 +133,4 @@
 /Users/drew/Documents/coding/car-swipe-dotnet/obj/Debug/net8.0/car-swipe-dotnet.pdb
 /Users/drew/Documents/coding/car-swipe-dotnet/obj/Debug/net8.0/car-swipe-dotnet.genruntimeconfig.cache
 /Users/drew/Documents/coding/car-swipe-dotnet/obj/Debug/net8.0/ref/car-swipe-dotnet.dll
+/Users/drew/Documents/coding/car-swipe-dotnet/obj/Debug/net8.0/car-swipe-dotnet.sourcelink.json
