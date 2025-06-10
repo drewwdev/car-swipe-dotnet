@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "car-swipe-dotnet", "car-swipe-dotnet.csproj", "{791D22D4-88A6-1EE7-5D80-2332A002EDCA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{791D22D4-88A6-1EE7-5D80-2332A002EDCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{791D22D4-88A6-1EE7-5D80-2332A002EDCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{791D22D4-88A6-1EE7-5D80-2332A002EDCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{791D22D4-88A6-1EE7-5D80-2332A002EDCA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2DF2CECC-B292-4FE4-80FB-C83E2DAC8500}
+	EndGlobalSection
+EndGlobal

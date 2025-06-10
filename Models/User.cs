@@ -1,0 +1,18 @@
+public enum UserRole {
+    Buyer,
+    Seller,
+    Both
+}
+
+public class User {
+    public int Id { get; set; }
+
+    public required string Username { get; set; }
+    public required string Email { get; set; }
+    public required string PasswordHash { get; set; }
+
+    public UserRole Role { get; set; }
+
+    public required string Location { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}

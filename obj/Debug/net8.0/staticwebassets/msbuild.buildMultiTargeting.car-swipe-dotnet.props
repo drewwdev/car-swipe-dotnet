@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="../build/car-swipe-dotnet.props" />
+</Project>

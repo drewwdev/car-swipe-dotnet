@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "qDh8wn74feIfnZRhw1EQIWZJl3Y20+FqXxYVXNF864Q=",
+  "Source": "car-swipe-dotnet",
+  "BasePath": "_content/car-swipe-dotnet",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
