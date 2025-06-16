@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,7 @@ public class PostsController : ControllerBase
         _context = context;
     }
 
+    [Authorize(Roles = "Seller,Both")]
     [HttpPost]
     public async Task<IActionResult> CreatePost(Post post)
     {

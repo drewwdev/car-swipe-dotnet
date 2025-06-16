@@ -25,7 +25,6 @@ public class AuthController : ControllerBase
             Username = dto.Username,
             Email = dto.Email,
             PasswordHash = _auth.HashPassword(dto.Password),
-            Role = UserRole.Both,
             Location = dto.Location
         };
 
