@@ -1,23 +1,31 @@
-public enum PostStatus { Active, Sold }
-public enum VehicleCondition { New, LikeNew, Used, Salvage }
+namespace car_swipe_dotnet.Models;
 
-public class Post {
+public enum PostStatus
+{
+    Active,
+    Sold
+}
+
+public class Post
+{
     public int Id { get; set; }
+
     public int UserId { get; set; }
+    public virtual User User { get; set; } = null!;
 
-    public required string Title { get; set; }
-    public required string Description { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
 
-    public required string Make { get; set; }
-    public required string Model { get; set; }
+    public string Make { get; set; } = string.Empty;
+    public string Model { get; set; } = string.Empty;
+
     public int Year { get; set; }
     public int Mileage { get; set; }
 
-    public VehicleCondition Condition { get; set; }
     public decimal Price { get; set; }
-    public required string Location { get; set; }
+    public string Location { get; set; } = string.Empty;
 
-    public required List<string> ImageUrls { get; set; } = new();
+    public List<string> ImageUrls { get; set; } = new();
 
     public PostStatus Status { get; set; } = PostStatus.Active;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

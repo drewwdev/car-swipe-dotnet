@@ -15,9 +15,11 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(UserDto dto)
+    public async Task<IActionResult> Register([FromBody] UserDto dto)
     {
-        if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var normalizedEmail = dto.Email.Trim().ToLower();
+        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail))
             return BadRequest("Email already in use.");
 
         var user = new User
@@ -40,7 +42,7 @@ public class AuthController : ControllerBase
     {
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
         if (user == null || !_auth.VerifyPassword(user.PasswordHash, dto.Password))
-            return Unauthorized("Invalid credentials.");
+            return Unauthorized("Invalid email or password.");
 
         var token = _auth.GenerateJwtToken(user);
         return Ok(new { token });

@@ -1,6 +1,8 @@
+using car_swipe_dotnet.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -15,10 +17,14 @@ public class PostsController : ControllerBase
 
     [Authorize(Roles = "Seller,Both")]
     [HttpPost]
-    public async Task<IActionResult> CreatePost(Post post)
+    public async Task<IActionResult> CreatePost([FromBody] Post post)
     {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        post.UserId = userId;
+
         _context.Posts.Add(post);
         await _context.SaveChangesAsync();
+
         return CreatedAtAction(nameof(GetPostById), new { id = post.Id }, post);
     }
 
@@ -38,9 +44,11 @@ public class PostsController : ControllerBase
         return post;
     }
 
-    [HttpGet("user/{userId}")]
-    public async Task<ActionResult<IEnumerable<Post>>> GetPostsByUser(int userId)
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<IEnumerable<Post>>> GetMyPosts()
     {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
         return await _context.Posts
             .Where(p => p.UserId == userId)
             .ToListAsync();

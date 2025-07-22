@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class ChatController : ControllerBase
@@ -12,10 +15,11 @@ public class ChatController : ControllerBase
         _context = context;
     }
 
-    // GET: api/chat/user/{userId}
-    [HttpGet("user/{userId}")]
-    public async Task<IActionResult> GetChatsForUser(int userId)
+    [HttpGet("me")]
+    public async Task<IActionResult> GetChatsForUser()
     {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
         var chats = await _context.Chats
             .Include(c => c.Messages)
             .Where(c => c.BuyerId == userId || c.SellerId == userId)
@@ -24,19 +28,30 @@ public class ChatController : ControllerBase
         return Ok(chats);
     }
 
-    // POST: api/chat
     [HttpPost]
     public async Task<IActionResult> CreateChat([FromBody] Chat chat)
     {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        if (chat.BuyerId != userId && chat.SellerId != userId)
+            return Forbid();
+
         _context.Chats.Add(chat);
         await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetChatsForUser), new { userId = chat.BuyerId }, chat);
+
+        return CreatedAtAction(nameof(GetChatsForUser), new { }, chat);
     }
 
-    // GET: api/chat/{chatId}/messages
     [HttpGet("{chatId}/messages")]
     public async Task<IActionResult> GetMessages(int chatId)
     {
+        var chat = await _context.Chats.FindAsync(chatId);
+        if (chat == null) return NotFound();
+
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        if (chat.BuyerId != userId && chat.SellerId != userId)
+            return Forbid();
+
         var messages = await _context.Messages
             .Where(m => m.ChatId == chatId)
             .OrderBy(m => m.SentAt)
@@ -45,16 +60,23 @@ public class ChatController : ControllerBase
         return Ok(messages);
     }
 
-    // POST: api/chat/{chatId}/messages
     [HttpPost("{chatId}/messages")]
     public async Task<IActionResult> SendMessage(int chatId, [FromBody] Message message)
     {
-        var chatExists = await _context.Chats.AnyAsync(c => c.Id == chatId);
-        if (!chatExists) return NotFound("Chat not found");
+        var chat = await _context.Chats.FindAsync(chatId);
+        if (chat == null) return NotFound();
 
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        if (chat.BuyerId != userId && chat.SellerId != userId)
+            return Forbid();
+
+        message.SenderId = userId;
         message.ChatId = chatId;
+        message.SentAt = DateTime.UtcNow;
+
         _context.Messages.Add(message);
         await _context.SaveChangesAsync();
+
         return Ok(message);
     }
 }
