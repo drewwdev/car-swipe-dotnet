@@ -14,28 +14,42 @@ public class AuthController : ControllerBase
         _auth = auth;
     }
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] UserDto dto)
+[HttpPost("register")]
+public async Task<IActionResult> Register([FromBody] UserDto dto)
+{
+    if (!ModelState.IsValid)
+        return BadRequest(ModelState);
+
+    var normalizedEmail = dto.Email.Trim().ToLower();
+
+    if (await _context.Users.AnyAsync(u => u.Username.ToLower() == dto.Username.ToLower()))
+        return BadRequest("Username already in use.");
+
+    if (await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail))
+        return BadRequest("Email already in use.");
+
+    var user = new User
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
-        var normalizedEmail = dto.Email.Trim().ToLower();
-        if (await _context.Users.AnyAsync(u => u.Email.ToLower() == normalizedEmail))
-            return BadRequest("Email already in use.");
+        Username = dto.Username,
+        Email = dto.Email,
+        PasswordHash = _auth.HashPassword(dto.Password),
+        Location = dto.Location
+    };
 
-        var user = new User
-        {
-            Username = dto.Username,
-            Email = dto.Email,
-            PasswordHash = _auth.HashPassword(dto.Password),
-            Location = dto.Location
-        };
-
+    try
+    {
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
-
-        var token = _auth.GenerateJwtToken(user);
-        return Ok(new { token });
     }
+    catch (DbUpdateException ex)
+    {
+        Console.WriteLine("⚠️ DB Save Error: " + ex.Message);
+        return StatusCode(500, new { message = "A database error occurred." });
+    }
+
+    var token = _auth.GenerateJwtToken(user);
+    return Ok(new { token });
+}
 
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto dto)

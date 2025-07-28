@@ -149,3 +149,8 @@
 /Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/System.Security.Cryptography.Pkcs.dll
 /Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/System.Security.Cryptography.Xml.dll
 /Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.dll
+/Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/client/package-lock.json
+/Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/client/package.json
+/Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/client/tsconfig.app.json
+/Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/client/tsconfig.json
+/Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/client/tsconfig.node.json
