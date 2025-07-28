@@ -19,12 +19,12 @@ export default function Login() {
     try {
       const { user, token } = await apiLogin({ email, password });
       login(user, token);
-      navigate("/swipe");
+      navigate("/dashboard");
     } catch (err) {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.message || "Login failed");
       } else {
-        setError("An unexpected error occurred");
+        setError("Unexpected error");
       }
     }
   };
