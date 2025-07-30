@@ -51,14 +51,23 @@ public async Task<IActionResult> Register([FromBody] UserDto dto)
     return Ok(new { token });
 }
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginDto dto)
-    {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-        if (user == null || !_auth.VerifyPassword(user.PasswordHash, dto.Password))
-            return Unauthorized("Invalid email or password.");
+[HttpPost("login")]
+public async Task<IActionResult> Login(LoginDto dto)
+{
+    var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+    if (user == null || !_auth.VerifyPassword(user.PasswordHash, dto.Password))
+        return Unauthorized("Invalid email or password.");
 
-        var token = _auth.GenerateJwtToken(user);
-        return Ok(new { token });
-    }
+    var token = _auth.GenerateJwtToken(user);
+    return Ok(new
+    {
+        token,
+        user = new
+        {
+            user.Id,
+            user.Email,
+            user.Username
+        }
+    });
+}
 }
