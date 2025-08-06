@@ -1,7 +1,14 @@
 import { useAuth } from "../context/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
@@ -12,6 +19,11 @@ export default function Dashboard() {
             Logged in as <strong>{user.email}</strong>
           </p>
         )}
+        <button
+          onClick={handleLogout}
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+          Logout
+        </button>
       </div>
     </div>
   );
