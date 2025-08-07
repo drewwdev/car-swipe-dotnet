@@ -44,6 +44,12 @@ export default function Dashboard() {
         )}
 
         <button
+          onClick={() => navigate("/swipe")}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full">
+          Browse Posts
+        </button>
+
+        <button
           onClick={() => navigate("/create-post")}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">
           Create Post

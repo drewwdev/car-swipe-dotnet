@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/useAuth";
+import toast from "react-hot-toast";
 
 interface Post {
   id: number;
@@ -48,7 +49,7 @@ export default function Swipe() {
     if (!currentPost) return;
 
     try {
-      await axios.post(
+      const res = await axios.post(
         "http://localhost:5277/api/swipes",
         {
           postId: currentPost.id,
@@ -62,10 +63,24 @@ export default function Swipe() {
         }
       );
 
+      if (direction === "Right") {
+        const chatId = res.data?.chatId;
+        if (chatId) {
+          toast.success("✅ Chat created! Redirecting...");
+          navigate(`/chats/${chatId}`);
+          return;
+        } else {
+          toast.success("👍 Liked");
+        }
+      } else {
+        toast("👎 Disliked");
+      }
+
       setCurrentIndex((prev) => prev + 1);
     } catch (err) {
       console.error("❌ Swipe failed:", err);
       setError("Failed to record swipe.");
+      toast.error("Swipe failed.");
     }
   };
 
