@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/useAuth";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 interface Post {
   id: number;
@@ -33,6 +34,19 @@ export default function MyPosts() {
     fetchPosts();
   }, [token]);
 
+  const handleDelete = async (postId: number) => {
+    try {
+      await axios.delete(`http://localhost:5277/api/posts/${postId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      toast.success("Post deleted!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete post.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h2 className="text-2xl font-bold mb-4">My Posts</h2>
@@ -43,20 +57,31 @@ export default function MyPosts() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {posts.map((post) => (
-            <Link
-              to={`/posts/${post.id}`}
+            <div
               key={post.id}
-              className="bg-white shadow p-4 rounded hover:shadow-md transition duration-200">
+              className="bg-white shadow p-4 rounded hover:shadow-md transition duration-200 relative">
               {post.imageUrls.length > 0 && (
-                <img
-                  src={post.imageUrls[0]}
-                  alt="Car"
-                  className="w-full h-40 object-cover rounded mb-2"
-                />
+                <Link to={`/posts/${post.id}`}>
+                  <img
+                    src={post.imageUrls[0]}
+                    alt="Car"
+                    className="w-full h-40 object-cover rounded mb-2"
+                  />
+                </Link>
               )}
-              <h3 className="text-lg font-semibold">{post.title}</h3>
+              <Link to={`/posts/${post.id}`}>
+                <h3 className="text-lg font-semibold hover:underline">
+                  {post.title}
+                </h3>
+              </Link>
               <p className="text-gray-600">${post.price}</p>
-            </Link>
+
+              <button
+                onClick={() => handleDelete(post.id)}
+                className="absolute top-2 right-2 text-sm text-red-600 hover:underline">
+                Delete
+              </button>
+            </div>
           ))}
         </div>
       )}

@@ -92,4 +92,23 @@ public class PostsController : ControllerBase
         if (post == null) return NotFound();
         return post;
     }
+
+    [HttpDelete("{id}")]
+    [Authorize]
+    public async Task<IActionResult> DeletePost(int id)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var post = await _context.Posts.FindAsync(id);
+        if (post == null || post.UserId != userId)
+        {
+            return NotFound();
+        }
+
+        _context.Posts.Remove(post);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
+    }
+
 }
