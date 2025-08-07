@@ -15,18 +15,19 @@ public class ChatController : ControllerBase
         _context = context;
     }
 
-    [HttpGet("me")]
-    public async Task<IActionResult> GetChatsForUser()
-    {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+[HttpGet("me")]
+public async Task<IActionResult> GetChatsForUser()
+{
+    var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-        var chats = await _context.Chats
-            .Include(c => c.Messages)
-            .Where(c => c.BuyerId == userId || c.SellerId == userId)
-            .ToListAsync();
+    var chats = await _context.Chats
+        .Include(c => c.Messages)
+        .Include(c => c.Post)
+        .Where(c => c.BuyerId == userId || c.SellerId == userId)
+        .ToListAsync();
 
-        return Ok(chats);
-    }
+    return Ok(chats);
+}
 
     [HttpPost]
     public async Task<IActionResult> CreateChat([FromBody] Chat chat)

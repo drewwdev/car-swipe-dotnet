@@ -44,12 +44,6 @@ export default function Dashboard() {
         )}
 
         <button
-          onClick={handleLogout}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full">
-          Logout
-        </button>
-
-        <button
           onClick={() => navigate("/create-post")}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full">
           Create Post
@@ -70,6 +64,18 @@ export default function Dashboard() {
               NEW
             </span>
           )}
+        </button>
+
+        <button
+          onClick={() => navigate("/chats")}
+          className="relative bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 w-full">
+          View Chats
+        </button>
+
+        <button
+          onClick={handleLogout}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full">
+          Logout
         </button>
       </div>
     </div>
