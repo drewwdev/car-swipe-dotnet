@@ -90,7 +90,7 @@ export default function App() {
           }
         />
         <Route
-          path="/chats/:id"
+          path="/chats/:chatId"
           element={
             <PrivateRoute>
               <Layout>

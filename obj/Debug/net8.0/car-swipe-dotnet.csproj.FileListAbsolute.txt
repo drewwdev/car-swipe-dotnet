@@ -154,3 +154,5 @@
 /Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/client/tsconfig.app.json
 /Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/client/tsconfig.json
 /Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/client/tsconfig.node.json
+/Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/Newtonsoft.Json.dll
+/Users/drew/Documents/coding/car-swipe-dotnet/bin/Debug/net8.0/System.Net.WebSockets.WebSocketProtocol.dll

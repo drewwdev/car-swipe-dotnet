@@ -1,80 +1,127 @@
-import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { useAuth } from "../context/useAuth";
+import * as signalR from "@microsoft/signalr";
 
-type Message = {
+interface Message {
   id: number;
   senderId: number;
   text: string;
   sentAt: string;
-};
+}
 
 export default function ChatDetail() {
+  const { token, user } = useAuth();
   const { chatId } = useParams<{ chatId: string }>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [error, setError] = useState("");
+  const [connection, setConnection] = useState<signalR.HubConnection | null>(
+    null
+  );
 
   useEffect(() => {
     const fetchMessages = async () => {
-      const res = await fetch(`/api/chat/${chatId}/messages`);
-      if (!res.ok) {
-        console.error("Failed to load messages");
-        return;
+      try {
+        const res = await axios.get(
+          `http://localhost:5277/api/chat/${chatId}/messages`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setMessages(res.data);
+      } catch (err) {
+        console.error("Failed to load messages:", err);
+        setError("Failed to load messages.");
       }
-      const data = await res.json();
-      setMessages(data);
     };
 
     fetchMessages();
-  }, [chatId]);
+  }, [chatId, token]);
 
-  const handleSend = async () => {
-    if (!newMessage.trim()) return;
+  useEffect(() => {
+    const connect = new signalR.HubConnectionBuilder()
+      .withUrl(`http://localhost:5277/chathub?chatId=${chatId}`, {
+        accessTokenFactory: () => token || "",
+        withCredentials: true,
+      })
+      .withAutomaticReconnect()
+      .build();
 
-    const res = await fetch(`/api/chat/${chatId}/messages`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ text: newMessage }),
-    });
+    connect
+      .start()
+      .then(() => {
+        console.log("✅ Connected to SignalR");
 
-    if (res.ok) {
-      const newMsg = await res.json();
-      setMessages((prev) => [...prev, newMsg]);
+        connect.on("ReceiveMessage", (message: Message) => {
+          setMessages((prev) => [...prev, message]);
+        });
+
+        setConnection(connect);
+      })
+      .catch((err) => {
+        console.error("❌ SignalR connection failed:", err);
+        setError("Real-time connection failed.");
+      });
+
+    return () => {
+      connect.stop();
+    };
+  }, [token]);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim() || !connection) return;
+
+    try {
+      await connection.invoke("SendMessage", Number(chatId), newMessage);
       setNewMessage("");
-    } else {
-      console.error("Failed to send message");
+    } catch (err) {
+      console.error("Failed to send message:", err);
+      setError("Failed to send message.");
     }
   };
 
   return (
-    <div className="p-4 max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">Chat</h2>
-      <div className="border rounded p-4 mb-4 h-64 overflow-y-scroll bg-gray-50">
-        {messages.map((msg) => (
-          <div key={msg.id} className="mb-2">
-            <div className="text-sm text-gray-600">
-              User {msg.senderId} - {new Date(msg.sentAt).toLocaleTimeString()}
+    <div className="min-h-screen p-6 bg-gray-100">
+      <h2 className="text-xl font-bold mb-4">Chat #{chatId}</h2>
+      {error && <p className="text-red-500 mb-2">{error}</p>}
+      <div className="bg-white p-4 rounded shadow max-h-[60vh] overflow-y-auto mb-4 space-y-2">
+        {messages.length === 0 ? (
+          <p>No messages yet.</p>
+        ) : (
+          messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`p-2 rounded ${
+                msg.senderId === user?.id
+                  ? "bg-blue-100 text-right"
+                  : "bg-gray-200 text-left"
+              }`}>
+              <p className="text-sm">{msg.text}</p>
+              <p className="text-xs text-gray-500">
+                {new Date(msg.sentAt).toLocaleString()}
+              </p>
             </div>
-            <div className="bg-white p-2 rounded shadow">{msg.text}</div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
-      <div className="flex gap-2">
+      <form onSubmit={handleSend} className="flex gap-2">
         <input
           type="text"
-          className="flex-1 border rounded p-2"
+          className="flex-1 p-2 border rounded"
+          placeholder="Type a message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type a message"
         />
         <button
-          className="bg-blue-500 text-white px-4 py-2 rounded"
-          onClick={handleSend}>
+          type="submit"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
           Send
         </button>
-      </div>
+      </form>
     </div>
   );
 }

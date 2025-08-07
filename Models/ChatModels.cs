@@ -24,11 +24,11 @@ public class Message
     public int Id { get; set; }
 
     public int ChatId { get; set; }
-
     [JsonIgnore]
     public virtual Chat Chat { get; set; } = null!;
 
     public int SenderId { get; set; }
+    [JsonIgnore]
     public virtual User Sender { get; set; } = null!;
 
     public string Text { get; set; } = string.Empty;

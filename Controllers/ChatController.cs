@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using car_swipe_dotnet.Dtos;
 
 [Authorize]
 [ApiController]
@@ -61,23 +62,27 @@ public async Task<IActionResult> GetChatsForUser()
         return Ok(messages);
     }
 
-    [HttpPost("{chatId}/messages")]
-    public async Task<IActionResult> SendMessage(int chatId, [FromBody] Message message)
+[HttpPost("{chatId}/messages")]
+public async Task<IActionResult> SendMessage(int chatId, [FromBody] SendMessageDto dto)
+{
+    var chat = await _context.Chats.FindAsync(chatId);
+    if (chat == null) return NotFound();
+
+    var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    if (chat.BuyerId != userId && chat.SellerId != userId)
+        return Forbid();
+
+    var message = new Message
     {
-        var chat = await _context.Chats.FindAsync(chatId);
-        if (chat == null) return NotFound();
+        ChatId = chatId,
+        SenderId = userId,
+        Text = dto.Text,
+        SentAt = DateTime.UtcNow
+    };
 
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        if (chat.BuyerId != userId && chat.SellerId != userId)
-            return Forbid();
+    _context.Messages.Add(message);
+    await _context.SaveChangesAsync();
 
-        message.SenderId = userId;
-        message.ChatId = chatId;
-        message.SentAt = DateTime.UtcNow;
-
-        _context.Messages.Add(message);
-        await _context.SaveChangesAsync();
-
-        return Ok(message);
-    }
+    return Ok(message);
+}
 }
