@@ -5,6 +5,8 @@ import Swipe from "./pages/Swipe";
 import Dashboard from "./pages/Dashboard";
 import CreatePost from "./pages/CreatePost";
 import PostDetail from "./pages/PostDetail";
+import MyPosts from "./pages/MyPosts";
+import LikedPosts from "./pages/LikedPosts";
 import Layout from "./components/Layout";
 import { AuthProvider } from "./context/AuthProvider";
 import PrivateRoute from "./components/PrivateRoute";
@@ -51,6 +53,26 @@ export default function App() {
             <PrivateRoute>
               <Layout>
                 <PostDetail />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/my-posts"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <MyPosts />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/liked-posts"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <LikedPosts />
               </Layout>
             </PrivateRoute>
           }

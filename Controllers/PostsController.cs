@@ -36,14 +36,6 @@ public class PostsController : ControllerBase
             .ToListAsync();
     }
 
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Post>> GetPostById(int id)
-    {
-        var post = await _context.Posts.FindAsync(id);
-        if (post == null) return NotFound();
-        return post;
-    }
-
     [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<IEnumerable<Post>>> GetMyPosts()
@@ -74,4 +66,30 @@ public class PostsController : ControllerBase
         return posts;
     }
 
+    [Authorize]
+    [HttpGet("liked")]
+    public async Task<ActionResult<IEnumerable<Post>>> GetMyLikedPosts()
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var likedPostIds = await _context.Swipes
+            .Where(s => s.Direction == SwipeDirection.Right && s.Post.UserId == userId)
+            .Select(s => s.PostId)
+            .Distinct()
+            .ToListAsync();
+
+        var likedPosts = await _context.Posts
+            .Where(p => likedPostIds.Contains(p.Id))
+            .ToListAsync();
+
+        return likedPosts;
+    }
+
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Post>> GetPostById(int id)
+    {
+        var post = await _context.Posts.FindAsync(id);
+        if (post == null) return NotFound();
+        return post;
+    }
 }
