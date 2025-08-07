@@ -8,6 +8,7 @@ import PostDetail from "./pages/PostDetail";
 import MyPosts from "./pages/MyPosts";
 import LikedPosts from "./pages/LikedPosts";
 import Chats from "./pages/Chats";
+import ChatDetail from "./pages/ChatDetail";
 import Layout from "./components/Layout";
 import { AuthProvider } from "./context/AuthProvider";
 import PrivateRoute from "./components/PrivateRoute";
@@ -84,6 +85,16 @@ export default function App() {
             <PrivateRoute>
               <Layout>
                 <Chats />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/chats/:id"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <ChatDetail />
               </Layout>
             </PrivateRoute>
           }

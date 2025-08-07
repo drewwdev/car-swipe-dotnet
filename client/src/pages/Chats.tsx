@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/useAuth";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 interface Chat {
   id: number;
@@ -14,7 +14,6 @@ interface Chat {
 
 export default function Chats() {
   const { token } = useAuth();
-  const navigate = useNavigate();
   const [chats, setChats] = useState<Chat[]>([]);
   const [error, setError] = useState("");
 
@@ -45,15 +44,15 @@ export default function Chats() {
       ) : (
         <div className="space-y-4">
           {chats.map((chat) => (
-            <div
+            <Link
+              to={`/chats/${chat.id}`}
               key={chat.id}
-              onClick={() => navigate(`/chats/${chat.id}`)}
-              className="cursor-pointer p-4 bg-white rounded shadow hover:bg-gray-50">
+              className="block p-4 bg-white rounded shadow hover:bg-gray-50">
               <p className="font-semibold">
                 Chat about: {chat.post?.title ?? "Post"}
               </p>
               <p className="text-sm text-gray-500">Chat ID: {chat.id}</p>
-            </div>
+            </Link>
           ))}
         </div>
       )}
