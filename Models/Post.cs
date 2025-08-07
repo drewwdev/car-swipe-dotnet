@@ -34,4 +34,6 @@ public class Post
 
     public PostStatus Status { get; set; } = PostStatus.Active;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public bool IsLikedNotified { get; set; } = false;
+
 }
