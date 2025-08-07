@@ -8,8 +8,8 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("dreww.dev@gmail.com");
+  const [password, setPassword] = useState("password123");
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {

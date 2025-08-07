@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+
 namespace car_swipe_dotnet.Models;
 
 public enum PostStatus
@@ -11,6 +14,8 @@ public class Post
     public int Id { get; set; }
 
     public int UserId { get; set; }
+    [BindNever]
+    [ValidateNever]
     public virtual User User { get; set; } = null!;
 
     public string Title { get; set; } = string.Empty;

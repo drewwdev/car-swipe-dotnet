@@ -16,7 +16,7 @@ public class SwipesController : ControllerBase
         _context = context;
     }
 
-[Authorize(Roles = "Buyer,Both")]
+[Authorize]
 [HttpPost]
 public async Task<IActionResult> CreateSwipe([FromBody] Swipe swipe)
 {

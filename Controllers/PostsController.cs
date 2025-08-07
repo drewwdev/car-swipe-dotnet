@@ -15,7 +15,7 @@ public class PostsController : ControllerBase
         _context = context;
     }
 
-    [Authorize(Roles = "Seller,Both")]
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> CreatePost([FromBody] Post post)
     {
@@ -53,4 +53,25 @@ public class PostsController : ControllerBase
             .Where(p => p.UserId == userId)
             .ToListAsync();
     }
+
+    [Authorize]
+    [HttpGet("available")]
+    public async Task<ActionResult<IEnumerable<Post>>> GetAvailablePosts()
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var swipedPostIds = await _context.Swipes
+            .Where(s => s.BuyerId == userId)
+            .Select(s => s.PostId)
+            .ToListAsync();
+
+        var posts = await _context.Posts
+            .Where(p => p.Status == PostStatus.Active &&
+                        p.UserId != userId &&
+                        !swipedPostIds.Contains(p.Id))
+            .ToListAsync();
+
+        return posts;
+    }
+
 }
