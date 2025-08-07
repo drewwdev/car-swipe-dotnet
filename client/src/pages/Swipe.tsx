@@ -17,38 +17,43 @@ interface Post {
 
 export default function Swipe() {
   const { token, user } = useAuth();
-
   const [posts, setPosts] = useState<Post[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!token) return;
-
-    axios
-      .get("http://localhost:5277/api/posts/available", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then((res) => {
+    const fetchPosts = async () => {
+      try {
+        const res = await axios.get(
+          "http://localhost:5277/api/posts/available",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         setPosts(res.data);
-      })
-      .catch(() => setError("Failed to load posts"));
+      } catch (err) {
+        setError("Failed to load posts.");
+        console.error("❌ Failed to load posts:", err);
+      }
+    };
+
+    fetchPosts();
   }, [token]);
 
-  const handleSwipe = async (direction: "Left" | "Right") => {
-    if (!user || currentIndex >= posts.length) return;
+  const currentPost = posts[currentIndex];
 
-    const post = posts[currentIndex];
+  const handleSwipe = async (direction: "Left" | "Right") => {
+    if (!currentPost) return;
 
     try {
       await axios.post(
         "http://localhost:5277/api/swipes",
         {
-          buyerId: user.id,
-          postId: post.id,
-          direction,
+          postId: currentPost.id,
+          buyerId: user?.id,
+          direction: direction === "Right" ? 1 : 0,
         },
         {
           headers: {
@@ -58,51 +63,65 @@ export default function Swipe() {
       );
 
       setCurrentIndex((prev) => prev + 1);
-    } catch {
-      setError("Failed to send swipe");
+    } catch (err) {
+      console.error("❌ Swipe failed:", err);
+      setError("Failed to record swipe.");
     }
   };
 
-  if (!token) return <p>Loading...</p>;
-  if (currentIndex >= posts.length) return <p>No more cars to swipe on!</p>;
-
-  const post = posts[currentIndex];
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-      <h2 className="text-2xl font-bold mb-4">Swipe Cars</h2>
+    <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
+      <h2 className="text-2xl font-semibold mb-4">Swipe Cars</h2>
       {error && <p className="text-red-500">{error}</p>}
 
-      <div className="bg-white rounded shadow-md p-4 w-full max-w-md mb-4">
-        {post.imageUrls.length > 0 && (
-          <img
-            src={post.imageUrls[0]}
-            alt="Car"
-            className="rounded mb-2 w-full"
-          />
-        )}
-        <h3 className="text-xl font-semibold">{post.title}</h3>
-        <p>
-          {post.year} {post.make} {post.model}
-        </p>
-        <p>{post.mileage} miles</p>
-        <p>${post.price.toLocaleString()}</p>
-        <p className="text-sm text-gray-600">Location: {post.location}</p>
-        <p className="mt-2">{post.description}</p>
-      </div>
+      {!currentPost ? (
+        <p>No more cars to show.</p>
+      ) : (
+        <div className="bg-white p-6 rounded shadow-md max-w-md w-full">
+          <h3 className="text-xl font-bold mb-2">{currentPost.title}</h3>
+          <p className="mb-2">{currentPost.description}</p>
+          <ul className="mb-4 text-gray-700">
+            <li>
+              <strong>Make:</strong> {currentPost.make}
+            </li>
+            <li>
+              <strong>Model:</strong> {currentPost.model}
+            </li>
+            <li>
+              <strong>Year:</strong> {currentPost.year}
+            </li>
+            <li>
+              <strong>Mileage:</strong> {currentPost.mileage}
+            </li>
+            <li>
+              <strong>Price:</strong> ${currentPost.price}
+            </li>
+            <li>
+              <strong>Location:</strong> {currentPost.location}
+            </li>
+          </ul>
+          {currentPost.imageUrls.length > 0 && (
+            <img
+              src={currentPost.imageUrls[0]}
+              alt="Car"
+              className="rounded w-full max-h-64 object-cover mb-4"
+            />
+          )}
 
-      <div className="flex space-x-4">
-        <button
-          onClick={() => handleSwipe("Left")}
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-          Pass
-        </button>
-        <button
-          onClick={() => handleSwipe("Right")}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-          Like
-        </button>
-      </div>
+          <div className="flex justify-around">
+            <button
+              onClick={() => handleSwipe("Left")}
+              className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600">
+              👎 Dislike
+            </button>
+            <button
+              onClick={() => handleSwipe("Right")}
+              className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
+              👍 Like
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

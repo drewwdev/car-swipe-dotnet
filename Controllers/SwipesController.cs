@@ -20,7 +20,11 @@ public class SwipesController : ControllerBase
 [HttpPost]
 public async Task<IActionResult> CreateSwipe([FromBody] Swipe swipe)
 {
-    if (!ModelState.IsValid) return BadRequest(ModelState);
+
+    if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
 
     swipe.CreatedAt = DateTime.UtcNow;
     _context.Swipes.Add(swipe);
