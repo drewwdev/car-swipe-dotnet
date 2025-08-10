@@ -35,6 +35,18 @@ export default function Chats() {
     fetchChats();
   }, [token]);
 
+  const handleDelete = async (chatId: number) => {
+    try {
+      await axios.delete(`http://localhost:5277/api/chat/${chatId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setChats((prev) => prev.filter((c) => c.id !== chatId));
+    } catch (err) {
+      console.error("❌ Failed to delete chat:", err);
+      setError("Failed to delete chat.");
+    }
+  };
+
   return (
     <div className="min-h-screen p-6 bg-gray-100">
       <h2 className="text-2xl font-bold mb-4">Your Chats</h2>
@@ -44,15 +56,24 @@ export default function Chats() {
       ) : (
         <div className="space-y-4">
           {chats.map((chat) => (
-            <Link
-              to={`/chats/${chat.id}`}
-              key={chat.id}
-              className="block p-4 bg-white rounded shadow hover:bg-gray-50">
-              <p className="font-semibold">
-                Chat about: {chat.post?.title ?? "Post"}
-              </p>
-              <p className="text-sm text-gray-500">Chat ID: {chat.id}</p>
-            </Link>
+            <div key={chat.id} className="bg-white p-4 rounded shadow">
+              <Link
+                to={`/chats/${chat.id}`}
+                className="block p-4 bg-white rounded shadow hover:bg-gray-50">
+                <p className="font-semibold">
+                  Chat about: {chat.post?.title ?? "Post"}
+                </p>
+                <p className="text-sm text-gray-500">Chat ID: {chat.id}</p>
+              </Link>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDelete(chat.id);
+                }}
+                className="text-red-500 hover:underline ml-2">
+                Delete Chat
+              </button>
+            </div>
           ))}
         </div>
       )}
