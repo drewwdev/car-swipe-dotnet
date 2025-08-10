@@ -9,6 +9,7 @@ interface Post {
   title: string;
   price: number;
   imageUrls: string[];
+  status: string;
 }
 
 export default function MyPosts() {
@@ -47,6 +48,23 @@ export default function MyPosts() {
     }
   };
 
+  const handleMarkAsSold = async (postId: number) => {
+    try {
+      await axios.patch(
+        `http://localhost:5277/api/posts/${postId}/status`,
+        { status: "Sold" },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPosts((prev) =>
+        prev.map((p) => (p.id === postId ? { ...p, status: "Sold" } : p))
+      );
+      toast.success("Post marked as sold!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to mark post as sold.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h2 className="text-2xl font-bold mb-4">My Posts</h2>
@@ -76,11 +94,34 @@ export default function MyPosts() {
               </Link>
               <p className="text-gray-600">${post.price}</p>
 
-              <button
-                onClick={() => handleDelete(post.id)}
-                className="absolute top-2 right-2 text-sm text-red-600 hover:underline">
-                Delete
-              </button>
+              <Link
+                to={`/posts/edit/${post.id}`}
+                className="absolute top-2 left-2 text-sm text-blue-600 hover:underline">
+                Edit
+              </Link>
+
+              <p className="text-gray-600">${post.price}</p>
+              <p
+                className={`text-sm ${
+                  post.status === "Sold" ? "text-red-500" : "text-green-600"
+                }`}>
+                {post.status}
+              </p>
+
+              <div className="flex gap-2 mt-2">
+                {post.status !== "Sold" && (
+                  <button
+                    onClick={() => handleMarkAsSold(post.id)}
+                    className="text-sm text-yellow-600 hover:underline">
+                    Mark as Sold
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(post.id)}
+                  className="text-sm text-red-600 hover:underline">
+                  Delete
+                </button>
+              </div>
             </div>
           ))}
         </div>

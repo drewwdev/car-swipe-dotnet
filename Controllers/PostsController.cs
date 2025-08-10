@@ -85,6 +85,7 @@ public class PostsController : ControllerBase
         return likedPosts;
     }
 
+    [Authorize]
     [HttpGet("{id}")]
     public async Task<ActionResult<Post>> GetPostById(int id)
     {
@@ -93,8 +94,8 @@ public class PostsController : ControllerBase
         return post;
     }
 
-    [HttpDelete("{id}")]
     [Authorize]
+    [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePost(int id)
     {
         var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
@@ -109,6 +110,45 @@ public class PostsController : ControllerBase
         await _context.SaveChangesAsync();
 
         return NoContent();
+    }
+
+    [Authorize]
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdatePost(int id, [FromBody] UpdatePostDto dto)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var post = await _context.Posts.FindAsync(id);
+        if (post == null) return NotFound();
+        if (post.UserId != userId) return Forbid();
+
+        post.Title = dto.Title;
+        post.Description = dto.Description;
+        post.Price = dto.Price;
+        post.Mileage = dto.Mileage;
+        post.ImageUrls = dto.ImageUrls;
+        post.Location = dto.Location;
+        post.Year = dto.Year;
+
+        await _context.SaveChangesAsync();
+        return Ok(post);
+    }
+
+    [Authorize]
+    [HttpPatch("{id}/status")]
+    public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusDto dto)
+    {
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+        var post = await _context.Posts.FindAsync(id);
+        if (post == null) return NotFound();
+        if (post.UserId != userId) return Forbid();
+
+        post.Status = dto.Status == "Sold" ? PostStatus.Sold : PostStatus.Active;
+        _context.Posts.Update(post);
+        await _context.SaveChangesAsync();
+
+        return Ok(post);
     }
 
 }

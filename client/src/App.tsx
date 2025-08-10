@@ -1,5 +1,6 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Swipe from "./pages/Swipe";
@@ -10,7 +11,10 @@ import MyPosts from "./pages/MyPosts";
 import LikedPosts from "./pages/LikedPosts";
 import Chats from "./pages/Chats";
 import ChatDetail from "./pages/ChatDetail";
+import EditPost from "./pages/EditPost";
+
 import Layout from "./components/Layout";
+
 import { AuthProvider } from "./context/AuthProvider";
 import PrivateRoute from "./components/PrivateRoute";
 
@@ -97,6 +101,16 @@ export default function App() {
             <PrivateRoute>
               <Layout>
                 <ChatDetail />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/posts/edit/:id"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <EditPost />
               </Layout>
             </PrivateRoute>
           }
