@@ -7,9 +7,13 @@ public class UpdatePostDto
     public List<string> ImageUrls { get; set; } = new();
     public string Location { get; set; } = "";
     public int Year { get; set; }
+    public string Status { get; set; } = "Active";
+    public int? BuyerId { get; set; }
+
 }
 
 public class UpdateStatusDto
 {
-    public string Status { get; set; } = "Available"; // or "Sold"
+    public string Status { get; set; } = "Active";
+    public int? BuyerId { get; set; }
 }

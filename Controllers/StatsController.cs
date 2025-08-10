@@ -17,6 +17,15 @@ public class StatsController : ControllerBase
     {
         var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
+        var cashEarned = await _context.Sales
+            .Where(s => s.SellerId == userId)
+            .SumAsync(s => (decimal?)s.Amount) ?? 0m;
+
+        var cashSpent = await _context.Sales
+            .Where(s => s.BuyerId == userId)
+            .SumAsync(s => (decimal?)s.Amount) ?? 0m;
+
+
         var myPosts        = await _context.Posts.CountAsync(p => p.UserId == userId);
         var carsSold       = await _context.Posts.CountAsync(p => p.UserId == userId && p.Status == PostStatus.Sold);
         var likedByMe      = await _context.Swipes.CountAsync(s => s.BuyerId == userId && s.Direction == SwipeDirection.Right);
@@ -28,7 +37,6 @@ public class StatsController : ControllerBase
         var activeChats    = await _context.Chats.CountAsync(c => c.BuyerId == userId || c.SellerId == userId);
 
         int carsBought = 0;
-        decimal cashSpent = 0, cashEarned = 0;
 
         try
         {

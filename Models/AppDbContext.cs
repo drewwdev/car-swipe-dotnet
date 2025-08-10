@@ -14,7 +14,10 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Optional: Fluent config for enums, relationships, etc.
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<Sale>()
+            .HasIndex(s => s.PostId)
+            .IsUnique();
     }
     
     public static class DbInitializer

@@ -20,3 +20,5 @@ public class ActivityItemDto
     public int? ChatId { get; set; }
     public int? SaleId { get; set; }
 }
+
+

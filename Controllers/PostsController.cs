@@ -134,21 +134,65 @@ public class PostsController : ControllerBase
         return Ok(post);
     }
 
-    [Authorize]
-    [HttpPatch("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusDto dto)
+[Authorize]
+[HttpPatch("{id}/status")]
+public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusDto dto)
+{
+    var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+    await using var tx = await _context.Database.BeginTransactionAsync();
+
+    var post = await _context.Posts.FindAsync(id);
+    if (post == null) return NotFound();
+    if (post.UserId != userId) return Forbid();
+
+    var newStatus = dto.Status == "Sold" ? PostStatus.Sold : PostStatus.Active;
+
+    var existingSale = await _context.Sales.SingleOrDefaultAsync(s => s.PostId == id);
+
+    if (post.Status == newStatus)
     {
-        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-
-        var post = await _context.Posts.FindAsync(id);
-        if (post == null) return NotFound();
-        if (post.UserId != userId) return Forbid();
-
-        post.Status = dto.Status == "Sold" ? PostStatus.Sold : PostStatus.Active;
-        _context.Posts.Update(post);
-        await _context.SaveChangesAsync();
-
         return Ok(post);
     }
+
+    post.Status = newStatus;
+    _context.Posts.Update(post);
+
+    if (newStatus == PostStatus.Sold)
+    {
+        if (existingSale == null)
+        {
+            var sale = new Sale
+            {
+                PostId = id,
+                SellerId = post.UserId,
+                BuyerId  = dto.BuyerId,
+                Amount   = post.Price,
+                CreatedAt = DateTime.UtcNow,
+                ClosedAt  = DateTime.UtcNow
+            };
+            _context.Sales.Add(sale);
+        }
+        else
+        {
+            existingSale.Amount = post.Price;
+            if (existingSale.BuyerId == null && dto.BuyerId != null)
+                existingSale.BuyerId = dto.BuyerId;
+            _context.Sales.Update(existingSale);
+        }
+    }
+    else
+    {
+        if (existingSale != null)
+        {
+            _context.Sales.Remove(existingSale);
+        }
+    }
+
+    await _context.SaveChangesAsync();
+    await tx.CommitAsync();
+
+    return Ok(post);
+}
 
 }
