@@ -12,6 +12,19 @@ interface Message {
   sentAt: string;
 }
 
+interface ChatMeta {
+  id: number;
+  buyerId: number;
+  sellerId: number;
+  postId: number;
+  post?: {
+    id: number;
+    userId: number;
+    status: number | string;
+    price?: number;
+  };
+}
+
 export default function ChatDetail() {
   const { token, user } = useAuth();
   const { chatId } = useParams<{ chatId: string }>();
@@ -27,6 +40,16 @@ export default function ChatDetail() {
   >("disconnected");
   const [sending, setSending] = useState(false);
 
+  const [chatMeta, setChatMeta] = useState<ChatMeta | null>(null);
+  const [soldBanner, setSoldBanner] = useState<{
+    amount: number;
+    when: string;
+  } | null>(null);
+
+  const [saleOpen, setSaleOpen] = useState(false);
+  const [saleAmount, setSaleAmount] = useState<string>("");
+  const [closingSale, setClosingSale] = useState(false);
+
   const listRef = useRef<HTMLDivElement | null>(null);
 
   const chatIdNum = useMemo(() => Number(chatId), [chatId]);
@@ -34,7 +57,18 @@ export default function ChatDetail() {
     newMessage.trim().length > 0 &&
     connection &&
     status === "connected" &&
-    !sending;
+    !sending &&
+    !soldBanner;
+
+  const isPostSold = (meta?: ChatMeta | null) => {
+    const s = meta?.post?.status;
+    if (s === undefined || s === null) return false;
+    return s === "Sold" || s === 1;
+  };
+
+  const iAmSeller = chatMeta && user ? chatMeta.sellerId === user.id : false;
+  const showMarkAsSold =
+    !!chatMeta && iAmSeller && !isPostSold(chatMeta) && !soldBanner;
 
   useEffect(() => {
     const fetchMessages = async () => {
@@ -46,8 +80,27 @@ export default function ChatDetail() {
         console.error("Failed to load messages:", err);
       }
     };
-    if (chatId && token) fetchMessages();
-  }, [chatId, token]);
+    const fetchMeta = async () => {
+      try {
+        const res = await api.get("/api/chat/me");
+        const meta: ChatMeta | undefined = (res.data as ChatMeta[]).find(
+          (c) => c.id === chatIdNum
+        );
+        if (meta) {
+          setChatMeta(meta);
+          if (isPostSold(meta)) {
+            setSoldBanner({ amount: 0, when: new Date().toISOString() });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load chat meta:", err);
+      }
+    };
+    if (chatId && token) {
+      fetchMessages();
+      fetchMeta();
+    }
+  }, [chatId, token, chatIdNum]);
 
   useEffect(() => {
     const baseUrl =
@@ -106,6 +159,33 @@ export default function ChatDetail() {
     }
   };
 
+  const handleCloseSale = async () => {
+    if (!saleAmount) return;
+    try {
+      setClosingSale(true);
+      const amountNum = Number(saleAmount);
+      if (Number.isNaN(amountNum) || amountNum < 0) {
+        setError("Enter a valid amount.");
+        setClosingSale(false);
+        return;
+      }
+      await api.post(`/api/chat/${chatId}/close-sale`, { amount: amountNum });
+      setSoldBanner({ amount: amountNum, when: new Date().toISOString() });
+      setSaleOpen(false);
+    } catch (err) {
+      console.error("Close sale failed:", err);
+      const msg =
+        err?.response?.status === 403
+          ? "Only the seller can mark this as sold."
+          : err?.response?.status === 409
+          ? "Already sold."
+          : "Failed to mark as sold.";
+      setError(msg);
+    } finally {
+      setClosingSale(false);
+    }
+  };
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -129,14 +209,37 @@ export default function ChatDetail() {
               <MessageSquare className="h-4 w-4" />
               Chat #{chatId}
             </div>
-            <span className={`rounded-full px-3 py-1 text-xs ${badge}`}>
-              {status === "connected"
-                ? "Online"
-                : status === "reconnecting"
-                ? "Reconnecting…"
-                : "Offline"}
-            </span>
+            <div className="flex items-center gap-2">
+              {showMarkAsSold && (
+                <button
+                  onClick={() => {
+                    setSaleAmount(String(chatMeta?.post?.price ?? ""));
+                    setSaleOpen(true);
+                  }}
+                  className="rounded-xl bg-emerald-600 text-white px-3 py-1.5 text-xs hover:opacity-90">
+                  Mark as Sold
+                </button>
+              )}
+              <span className={`rounded-full px-3 py-1 text-xs ${badge}`}>
+                {status === "connected"
+                  ? "Online"
+                  : status === "reconnecting"
+                  ? "Reconnecting…"
+                  : "Offline"}
+              </span>
+            </div>
           </div>
+
+          {soldBanner && (
+            <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 text-sm">
+              Sold{" "}
+              {soldBanner.amount
+                ? `for $${soldBanner.amount.toLocaleString()}`
+                : ""}{" "}
+              on {new Date(soldBanner.when).toLocaleString()}
+            </div>
+          )}
+
           {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
         </div>
 
@@ -189,8 +292,9 @@ export default function ChatDetail() {
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyDown={onKeyDown}
                 rows={1}
-                placeholder="Type a message…"
-                className="flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 outline-none"
+                placeholder={soldBanner ? "Item is sold." : "Type a message…"}
+                disabled={!!soldBanner}
+                className="flex-1 resize-none rounded-2xl border border-slate-200 bg-white px-3 py-2 outline-none disabled:opacity-60"
               />
               <button
                 type="submit"
@@ -203,6 +307,42 @@ export default function ChatDetail() {
           </form>
         </div>
       </div>
+
+      {saleOpen && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-sm rounded-2xl bg-white shadow-lg border border-slate-200 p-4">
+            <h3 className="font-semibold text-slate-900">Mark as Sold</h3>
+            <p className="text-sm text-slate-600 mt-1">
+              Enter the final amount to record the sale.
+            </p>
+            <div className="mt-3">
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                value={saleAmount}
+                onChange={(e) => setSaleAmount(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                placeholder="e.g. 12750.00"
+              />
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setSaleOpen(false)}
+                className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                disabled={closingSale}>
+                Cancel
+              </button>
+              <button
+                onClick={handleCloseSale}
+                className="rounded-xl bg-emerald-600 text-white px-3 py-1.5 text-sm disabled:opacity-60"
+                disabled={closingSale || !saleAmount}>
+                {closingSale ? "Saving…" : "Save"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
