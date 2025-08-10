@@ -2,15 +2,14 @@ import { useState } from "react";
 import { login as apiLogin } from "../services/auth";
 import { useAuth } from "../context/useAuth";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
 import { Mail, Lock, LogIn } from "lucide-react";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("dreww.dev@gmail.com");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -19,16 +18,13 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setSubmitting(true);
+
     try {
       const { user, token } = await apiLogin({ email, password });
       login(user, token);
       navigate("/dashboard");
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Login failed");
-      } else {
-        setError("Unexpected error");
-      }
+      setError(err?.message || "Login failed");
     } finally {
       setSubmitting(false);
     }

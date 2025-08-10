@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
 import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -30,12 +30,18 @@ interface Post {
 export default function Swipe() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
+
   const [posts, setPosts] = useState<Post[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [swiping, setSwiping] = useState(false);
 
   const currentPost = useMemo(() => posts[currentIndex], [posts, currentIndex]);
+  const remaining = useMemo(
+    () => Math.max(0, posts.length - currentIndex - 1),
+    [posts.length, currentIndex]
+  );
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -46,7 +52,7 @@ export default function Swipe() {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        setPosts(res.data);
+        setPosts(res.data || []);
       } catch (err) {
         setError("Failed to load posts.");
         console.error("❌ Failed to load posts:", err);
@@ -64,38 +70,55 @@ export default function Swipe() {
       maximumFractionDigits: 0,
     });
 
-  const handleSwipe = async (direction: "Left" | "Right") => {
-    if (!currentPost) return;
-    try {
-      const res = await axios.post(
-        "http://localhost:5277/api/swipes",
-        {
-          postId: currentPost.id,
-          buyerId: user?.id,
-          direction: direction === "Right" ? 1 : 0,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  const advance = () => setCurrentIndex((i) => i + 1);
 
-      if (direction === "Right") {
-        const chatId = res.data?.chatId;
-        if (chatId) {
-          toast.success("Match! Opening chat…");
-          navigate(`/chats/${chatId}`);
-          return;
+  const handleSwipe = useCallback(
+    async (direction: "Left" | "Right") => {
+      if (!currentPost || swiping) return;
+      setSwiping(true);
+      try {
+        const res = await axios.post(
+          "http://localhost:5277/api/swipes",
+          {
+            postId: currentPost.id,
+            buyerId: user?.id,
+            direction: direction === "Right" ? 1 : 0,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (direction === "Right") {
+          const chatId = res.data?.chatId;
+          if (chatId) {
+            toast.success("Match! Opening chat…");
+            navigate(`/chats/${chatId}`);
+            return;
+          }
+          toast.success("Liked");
+        } else {
+          toast("Disliked");
         }
-        toast.success("Liked");
-      } else {
-        toast("Disliked");
+        advance();
+      } catch (err) {
+        console.error("❌ Swipe failed:", err);
+        setError("Failed to record swipe.");
+        toast.error("Swipe failed.");
+      } finally {
+        setSwiping(false);
       }
+    },
+    [currentPost, swiping, token, user?.id, navigate]
+  );
 
-      setCurrentIndex((i) => i + 1);
-    } catch (err) {
-      console.error("❌ Swipe failed:", err);
-      setError("Failed to record swipe.");
-      toast.error("Swipe failed.");
-    }
-  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!currentPost) return;
+      if (e.key === "ArrowLeft") handleSwipe("Left");
+      if (e.key === "ArrowRight") handleSwipe("Right");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [currentPost, handleSwipe]);
 
   if (loading) {
     return (
@@ -115,9 +138,14 @@ export default function Swipe() {
             <CarFront className="h-4 w-4" />
             Browse
           </div>
-          <h2 className="mt-3 text-2xl md:text-3xl font-bold text-slate-900">
-            Swipe Cars
-          </h2>
+          <div className="mt-3 flex items-baseline justify-between">
+            <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
+              Swipe Cars
+            </h2>
+            {posts.length > 0 && (
+              <span className="text-sm text-slate-600">{remaining} left</span>
+            )}
+          </div>
           <p className="mt-1 text-slate-600">
             Like to connect. Dislike to skip.
           </p>
@@ -188,13 +216,15 @@ export default function Swipe() {
               <div className="mt-6 flex items-center justify-center gap-3">
                 <button
                   onClick={() => handleSwipe("Left")}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-2 text-slate-900 hover:bg-slate-50 transition">
+                  disabled={swiping}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-2 text-slate-900 hover:bg-slate-50 transition disabled:opacity-50">
                   <ThumbsDown className="h-5 w-5" />
                   Dislike
                 </button>
                 <button
                   onClick={() => handleSwipe("Right")}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 text-white px-5 py-2 hover:opacity-90 transition">
+                  disabled={swiping}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 text-white px-5 py-2 hover:opacity-90 transition disabled:opacity-50">
                   <ThumbsUp className="h-5 w-5" />
                   Like
                 </button>

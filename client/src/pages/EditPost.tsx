@@ -1,10 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
-import { useAuth } from "../context/useAuth";
 import toast from "react-hot-toast";
 import { CarFront, Save, X } from "lucide-react";
 import PostImage from "../components/PostImage";
+import api from "../lib/api";
 
 interface Post {
   id: number;
@@ -20,7 +19,6 @@ interface Post {
 export default function EditPost() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { token } = useAuth();
 
   const [formData, setFormData] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,9 +28,7 @@ export default function EditPost() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const res = await axios.get(`http://localhost:5277/api/posts/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get(`/api/posts/${id}`);
         setFormData(res.data);
       } catch (err) {
         setError("Failed to load post.");
@@ -42,8 +38,8 @@ export default function EditPost() {
         setLoading(false);
       }
     };
-    fetchPost();
-  }, [id, token]);
+    if (id) fetchPost();
+  }, [id]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -72,33 +68,27 @@ export default function EditPost() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData) return;
+    if (!formData || !id) return;
     setSaving(true);
     setError("");
+
     try {
-      await axios.put(
-        `http://localhost:5277/api/posts/${id}`,
-        {
-          title: formData.title,
-          description: formData.description,
-          price: formData.price,
-          mileage: formData.mileage,
-          imageUrls: formData.imageUrls,
-          location: formData.location,
-          year: formData.year,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/api/posts/${id}`, {
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        mileage: formData.mileage,
+        imageUrls: formData.imageUrls,
+        location: formData.location,
+        year: formData.year,
+      });
+
       toast.success("Post updated!");
       navigate("/my-posts");
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        toast.error("Session expired. Please log in again.");
-        navigate("/login");
-      } else {
-        setError("Failed to update post.");
-        toast.error("Failed to update post.");
-      }
+      setError("Failed to update post.");
+      toast.error("Failed to update post.");
+      console.error(err);
     } finally {
       setSaving(false);
     }

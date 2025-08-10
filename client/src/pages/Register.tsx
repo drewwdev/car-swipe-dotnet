@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { register as apiRegister } from "../services/auth";
 import { useAuth } from "../context/useAuth";
 import { useNavigate, Link } from "react-router-dom";
@@ -17,16 +17,27 @@ export default function Register() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const canSubmit = useMemo(() => {
+    return (
+      username.trim().length > 0 &&
+      location.trim().length > 0 &&
+      email.trim().length > 0 &&
+      password.trim().length >= 6
+    );
+  }, [username, location, email, password]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canSubmit || submitting) return;
+
     setError("");
     setSubmitting(true);
     try {
       const { user, token } = await apiRegister({
-        username,
-        email,
-        password,
-        location,
+        username: username.trim(),
+        email: email.trim(),
+        password: password.trim(),
+        location: location.trim(),
       });
       login(user, token);
       navigate("/swipe");
@@ -133,6 +144,7 @@ export default function Register() {
                 className="w-full outline-none text-slate-900 placeholder-slate-400"
                 placeholder="••••••••"
                 required
+                minLength={6}
               />
               <button
                 type="button"
@@ -145,7 +157,7 @@ export default function Register() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={!canSubmit || submitting}
             className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 text-white px-4 py-2.5 hover:opacity-90 transition disabled:opacity-50">
             <UserPlus className="h-5 w-5" />
             {submitting ? "Creating account..." : "Create account"}

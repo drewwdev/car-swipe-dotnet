@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { useAuth } from "../context/useAuth";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import PostImage from "../components/PostImage";
+import api from "../lib/api";
 
 interface Post {
   id: number;
@@ -14,7 +13,6 @@ interface Post {
 }
 
 export default function MyPosts() {
-  const { token } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState("");
@@ -34,19 +32,20 @@ export default function MyPosts() {
     });
 
   useEffect(() => {
+    const ctrl = new AbortController();
     const fetchPosts = async () => {
       try {
-        const res = await axios.get("http://localhost:5277/api/posts/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/api/posts/me", { signal: ctrl.signal });
         setPosts(res.data);
       } catch (err) {
+        if (err?.name === "CanceledError") return;
         setError("Failed to load your posts.");
         console.error(err);
       }
     };
     fetchPosts();
-  }, [token]);
+    return () => ctrl.abort();
+  }, []);
 
   const openConfirm = (postId: number, nextStatus: "Sold" | "Active") => {
     setPendingId(postId);
@@ -58,11 +57,9 @@ export default function MyPosts() {
     if (!pendingId || !pendingStatus) return;
     setUpdating(true);
     try {
-      await axios.patch(
-        `http://localhost:5277/api/posts/${pendingId}/status`,
-        { status: pendingStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.patch(`/api/posts/${pendingId}/status`, {
+        status: pendingStatus,
+      });
       setPosts((prev) =>
         prev.map((p) =>
           p.id === pendingId ? { ...p, status: pendingStatus } : p
@@ -86,9 +83,7 @@ export default function MyPosts() {
 
   const handleDelete = async (postId: number) => {
     try {
-      await axios.delete(`http://localhost:5277/api/posts/${postId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/api/posts/${postId}`);
       setPosts((prev) => prev.filter((p) => p.id !== postId));
       toast.success("Post deleted!");
     } catch (err) {

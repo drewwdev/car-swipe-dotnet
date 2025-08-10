@@ -1,13 +1,10 @@
 import { useState } from "react";
-import axios from "axios";
-import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
 import { CarFront, PlusCircle } from "lucide-react";
+import api from "../lib/api";
+import axios from "axios";
 
 export default function CreatePost() {
-  const { token } = useAuth();
-  const navigate = useNavigate();
-
   type FormState = {
     title: string;
     description: string;
@@ -19,6 +16,8 @@ export default function CreatePost() {
     location: string;
     imageUrl: string;
   };
+
+  const navigate = useNavigate();
 
   const [form, setForm] = useState<FormState>({
     title: "",
@@ -58,16 +57,9 @@ export default function CreatePost() {
     };
 
     try {
-      const res = await axios.post(
-        "http://localhost:5277/api/posts",
-        postData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await api.post("/api/posts", postData);
       navigate(`/posts/${res.data.id}`);
     } catch (err) {
-      console.error("❌ Post creation failed:", err);
       if (axios.isAxiosError(err)) {
         const message = err.response?.data?.errors
           ? Object.values(err.response.data.errors).flat().join(" ")
@@ -86,7 +78,6 @@ export default function CreatePost() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100">
       <div className="mx-auto max-w-3xl px-4 py-10">
-        {/* Header card */}
         <div className="mb-6 rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-6 shadow-sm">
           <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1 text-xs">
             <CarFront className="h-4 w-4" /> Create Post
@@ -95,12 +86,10 @@ export default function CreatePost() {
             Add a new listing
           </h1>
           <p className="mt-1 text-slate-600">
-            Keep it clean and accurate—good photos and details help buyers swipe
-            right.
+            Good photos and details help buyers swipe right.
           </p>
         </div>
 
-        {/* Form card */}
         <form
           onSubmit={handleSubmit}
           className="rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-6 shadow-sm space-y-5">

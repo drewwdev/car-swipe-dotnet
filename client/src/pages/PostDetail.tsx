@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
 import { useAuth } from "../context/useAuth";
 import {
   CarFront,
@@ -12,6 +11,7 @@ import {
   Edit3,
 } from "lucide-react";
 import PostImage from "../components/PostImage";
+import api from "../lib/api";
 
 interface Post {
   id: number;
@@ -55,20 +55,21 @@ export default function PostDetail() {
   const isOwner = post && currentUserId === post.userId;
 
   useEffect(() => {
+    const ctrl = new AbortController();
     const fetchPost = async () => {
       try {
-        const res = await axios.get(`http://localhost:5277/api/posts/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get(`/api/posts/${id}`, { signal: ctrl.signal });
         setPost(res.data);
         setSelectedIdx(0);
       } catch (err) {
+        if (err?.name === "CanceledError") return;
         setError("Failed to fetch post.");
         console.error("❌ Post fetch error:", err);
       }
     };
-    fetchPost();
-  }, [id, token]);
+    if (id) fetchPost();
+    return () => ctrl.abort();
+  }, [id]);
 
   const timeAgo = useMemo(() => {
     if (!post?.createdAt) return "";

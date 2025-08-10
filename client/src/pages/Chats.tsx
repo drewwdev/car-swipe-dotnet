@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
 import { useAuth } from "../context/useAuth";
 import { Link } from "react-router-dom";
 import PostImage from "../components/PostImage";
 import { MessageSquare, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "../lib/api";
 
 interface Message {
   id: number;
@@ -38,16 +38,14 @@ export default function Chats() {
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const res = await axios.get("http://localhost:5277/api/chat/me", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/api/chat/me");
         setChats(res.data);
       } catch (err) {
         setError("Failed to load chats.");
         console.error("❌ Failed to fetch chats:", err);
       }
     };
-    fetchChats();
+    if (token) fetchChats();
   }, [token]);
 
   const sorted = useMemo(() => {
@@ -73,9 +71,7 @@ export default function Chats() {
     if (!pendingId) return;
     setDeleting(true);
     try {
-      await axios.delete(`http://localhost:5277/api/chat/${pendingId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await api.delete(`/api/chat/${pendingId}`);
       setChats((prev) => prev.filter((c) => c.id !== pendingId));
       toast.success("Chat deleted");
       setConfirmOpen(false);

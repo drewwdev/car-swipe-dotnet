@@ -1,7 +1,6 @@
 import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import {
   Car,
   Heart,
@@ -11,7 +10,9 @@ import {
   Compass,
   Gauge,
   Clock,
+  DollarSign,
 } from "lucide-react";
+import api from "../lib/api";
 
 type StatsOverview = {
   myPosts: number;
@@ -86,12 +87,8 @@ export default function Dashboard() {
     const run = async () => {
       try {
         const [o, a] = await Promise.all([
-          axios.get("http://localhost:5277/api/stats/overview", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get("http://localhost:5277/api/stats/activity-basic?limit=10", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+          api.get("/api/stats/overview"),
+          api.get("/api/stats/activity-basic?limit=10"),
         ]);
         setOverview(o.data);
         setActivity(a.data);
@@ -99,22 +96,16 @@ export default function Dashboard() {
         console.error(e);
       }
     };
-    run();
+    if (token) run();
   }, [token]);
 
   useEffect(() => {
     const fetchStuff = async () => {
       try {
         const [mine, liked, chats] = await Promise.all([
-          axios.get("http://localhost:5277/api/posts/me", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get("http://localhost:5277/api/posts/liked", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get("http://localhost:5277/api/chat/me", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+          api.get("/api/posts/me"),
+          api.get("/api/posts/liked"),
+          api.get("/api/chat/me"),
         ]);
 
         setStats({
@@ -126,7 +117,7 @@ export default function Dashboard() {
         console.error("Failed to fetch dashboard data:", err);
       }
     };
-    fetchStuff();
+    if (token) fetchStuff();
   }, [token]);
 
   const Stat = ({
@@ -136,7 +127,7 @@ export default function Dashboard() {
   }: {
     label: string;
     value: number | string;
-    icon;
+    icon: IconType;
   }) => (
     <div className="flex items-center gap-3 rounded-2xl bg-white/70 backdrop-blur border border-white/40 px-4 py-3 shadow-sm">
       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
@@ -212,12 +203,12 @@ export default function Dashboard() {
               <Stat
                 label="Cash Earned"
                 value={money(overview.cashEarned)}
-                icon={Gauge}
+                icon={DollarSign}
               />
               <Stat
                 label="Cash Spent"
                 value={money(overview.cashSpent)}
-                icon={Gauge}
+                icon={DollarSign}
               />
             </div>
           )}

@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
 import PostImage from "../components/PostImage";
+import api from "../lib/api";
 
 interface Post {
   id: number;
@@ -19,10 +18,10 @@ interface Post {
 }
 
 export default function LikedPosts() {
-  const { token } = useAuth();
   const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const fmtPrice = (n: number) =>
     n.toLocaleString(undefined, {
@@ -34,17 +33,17 @@ export default function LikedPosts() {
   useEffect(() => {
     const fetchLikedPosts = async () => {
       try {
-        const res = await axios.get("http://localhost:5277/api/posts/liked", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/api/posts/liked");
         setPosts(res.data);
       } catch (err) {
         setError("Failed to load liked posts.");
         console.error("❌ Failed to load liked posts:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchLikedPosts();
-  }, [token]);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100 px-4 py-8">
@@ -60,7 +59,11 @@ export default function LikedPosts() {
 
         {error && <p className="mb-4 text-red-600">{error}</p>}
 
-        {posts.length === 0 ? (
+        {loading ? (
+          <div className="rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-8 text-center shadow-sm">
+            <p className="text-slate-700">Loading…</p>
+          </div>
+        ) : posts.length === 0 ? (
           <div className="rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-8 text-center shadow-sm">
             <p className="text-slate-700">No liked posts yet.</p>
           </div>

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import axios from "axios";
 import { useAuth } from "../context/useAuth";
 import * as signalR from "@microsoft/signalr";
 import { MessageSquare, Send } from "lucide-react";
+import api from "../lib/api";
 
 interface Message {
   id: number;
@@ -39,12 +39,7 @@ export default function ChatDetail() {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:5277/api/chat/${chatId}/messages`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const res = await api.get(`/api/chat/${chatId}/messages`);
         setMessages(res.data);
       } catch (err) {
         setError("Failed to load messages.");
@@ -55,9 +50,12 @@ export default function ChatDetail() {
   }, [chatId, token]);
 
   useEffect(() => {
+    const baseUrl =
+      (import.meta as unknown).env.VITE_API_URL || "http://localhost:5277";
+
     const hub = new signalR.HubConnectionBuilder()
-      .withUrl(`http://localhost:5277/chathub?chatId=${chatId}`, {
-        accessTokenFactory: () => token || "",
+      .withUrl(`${baseUrl}/chathub?chatId=${chatId}`, {
+        accessTokenFactory: () => localStorage.getItem("token") || "",
         withCredentials: true,
       })
       .withAutomaticReconnect()

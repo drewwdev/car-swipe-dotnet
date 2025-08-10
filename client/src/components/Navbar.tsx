@@ -8,8 +8,10 @@ import {
   MessageSquare,
   Menu,
 } from "lucide-react";
-import axios from "axios";
-import { useAuth } from "../context/useAuth";
+import { useAuth } from "../context/useAuth.ts";
+import api from "../lib/api";
+
+type IconType = React.ElementType;
 
 export default function Navbar() {
   const { token } = useAuth();
@@ -20,9 +22,7 @@ export default function Navbar() {
     let cancelled = false;
     const fetchLiked = async () => {
       try {
-        const res = await axios.get("http://localhost:5277/api/posts/liked", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/api/posts/liked");
         if (!cancelled) setHasLikedPosts((res.data?.length ?? 0) > 0);
       } catch {
         if (!cancelled) setHasLikedPosts(false);
@@ -45,7 +45,7 @@ export default function Navbar() {
     label,
   }: {
     to: string;
-    icon;
+    icon: IconType;
     label: string;
   }) => (
     <NavLink
