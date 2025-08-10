@@ -1,7 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { useAuth } from "../context/useAuth";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import PostImage from "../components/PostImage";
+import {
+  ThumbsDown,
+  ThumbsUp,
+  CarFront,
+  DollarSign,
+  Gauge,
+  MapPin,
+  Info,
+} from "lucide-react";
 
 interface Post {
   id: number;
@@ -18,9 +29,13 @@ interface Post {
 
 export default function Swipe() {
   const { token, user } = useAuth();
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<Post[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const currentPost = useMemo(() => posts[currentIndex], [posts, currentIndex]);
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -28,26 +43,29 @@ export default function Swipe() {
         const res = await axios.get(
           "http://localhost:5277/api/posts/available",
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
         setPosts(res.data);
       } catch (err) {
         setError("Failed to load posts.");
         console.error("❌ Failed to load posts:", err);
+      } finally {
+        setLoading(false);
       }
     };
-
     fetchPosts();
   }, [token]);
 
-  const currentPost = posts[currentIndex];
+  const fmtPrice = (n: number) =>
+    n.toLocaleString(undefined, {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    });
 
   const handleSwipe = async (direction: "Left" | "Right") => {
     if (!currentPost) return;
-
     try {
       const res = await axios.post(
         "http://localhost:5277/api/swipes",
@@ -56,27 +74,22 @@ export default function Swipe() {
           buyerId: user?.id,
           direction: direction === "Right" ? 1 : 0,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (direction === "Right") {
         const chatId = res.data?.chatId;
         if (chatId) {
-          toast.success("✅ Chat created! Redirecting...");
+          toast.success("Match! Opening chat…");
           navigate(`/chats/${chatId}`);
           return;
-        } else {
-          toast.success("👍 Liked");
         }
+        toast.success("Liked");
       } else {
-        toast("👎 Disliked");
+        toast("Disliked");
       }
 
-      setCurrentIndex((prev) => prev + 1);
+      setCurrentIndex((i) => i + 1);
     } catch (err) {
       console.error("❌ Swipe failed:", err);
       setError("Failed to record swipe.");
@@ -84,59 +97,112 @@ export default function Swipe() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center">
-      <h2 className="text-2xl font-semibold mb-4">Swipe Cars</h2>
-      {error && <p className="text-red-500">{error}</p>}
-
-      {!currentPost ? (
-        <p>No more cars to show.</p>
-      ) : (
-        <div className="bg-white p-6 rounded shadow-md max-w-md w-full">
-          <h3 className="text-xl font-bold mb-2">{currentPost.title}</h3>
-          <p className="mb-2">{currentPost.description}</p>
-          <ul className="mb-4 text-gray-700">
-            <li>
-              <strong>Make:</strong> {currentPost.make}
-            </li>
-            <li>
-              <strong>Model:</strong> {currentPost.model}
-            </li>
-            <li>
-              <strong>Year:</strong> {currentPost.year}
-            </li>
-            <li>
-              <strong>Mileage:</strong> {currentPost.mileage}
-            </li>
-            <li>
-              <strong>Price:</strong> ${currentPost.price}
-            </li>
-            <li>
-              <strong>Location:</strong> {currentPost.location}
-            </li>
-          </ul>
-          {currentPost.imageUrls.length > 0 && (
-            <img
-              src={currentPost.imageUrls[0]}
-              alt="Car"
-              className="rounded w-full max-h-64 object-cover mb-4"
-            />
-          )}
-
-          <div className="flex justify-around">
-            <button
-              onClick={() => handleSwipe("Left")}
-              className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600">
-              👎 Dislike
-            </button>
-            <button
-              onClick={() => handleSwipe("Right")}
-              className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
-              👍 Like
-            </button>
-          </div>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100 px-4 py-8 flex items-center justify-center">
+        <div className="rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-6 shadow-sm">
+          Loading…
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100 px-4 py-8">
+      <div className="mx-auto max-w-3xl">
+        <div className="mb-6 rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-6 shadow-sm">
+          <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-3 py-1 text-xs">
+            <CarFront className="h-4 w-4" />
+            Browse
+          </div>
+          <h2 className="mt-3 text-2xl md:text-3xl font-bold text-slate-900">
+            Swipe Cars
+          </h2>
+          <p className="mt-1 text-slate-600">
+            Like to connect. Dislike to skip.
+          </p>
+        </div>
+
+        {error && <p className="mb-4 text-red-600">{error}</p>}
+
+        {!currentPost ? (
+          <div className="rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-8 text-center shadow-sm">
+            <p className="text-slate-700">No more cars to show.</p>
+          </div>
+        ) : (
+          <div className="rounded-3xl border border-white/50 bg-white/70 backdrop-blur shadow-sm overflow-hidden">
+            <div className="relative">
+              <PostImage
+                urls={currentPost.imageUrls}
+                className="w-full h-72 object-cover"
+              />
+              <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-slate-900">
+                {fmtPrice(currentPost.price)}
+              </div>
+            </div>
+
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-slate-900">
+                {currentPost.title}
+              </h3>
+              <p className="mt-1 text-slate-600">{currentPost.description}</p>
+
+              <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700">
+                <li className="flex items-center gap-2">
+                  <Info className="h-4 w-4 text-slate-900" />
+                  <span className="flex-1">Model</span>
+                  <span className="font-medium text-slate-900">
+                    {currentPost.make} {currentPost.model}
+                  </span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-slate-900" />
+                  <span className="flex-1">Price</span>
+                  <span className="font-medium text-slate-900">
+                    {fmtPrice(currentPost.price)}
+                  </span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Info className="h-4 w-4 text-slate-900" />
+                  <span className="flex-1">Year</span>
+                  <span className="font-medium text-slate-900">
+                    {currentPost.year}
+                  </span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <Gauge className="h-4 w-4 text-slate-900" />
+                  <span className="flex-1">Mileage</span>
+                  <span className="font-medium text-slate-900">
+                    {currentPost.mileage.toLocaleString()} mi
+                  </span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-slate-900" />
+                  <span className="flex-1">Location</span>
+                  <span className="font-medium text-slate-900">
+                    {currentPost.location}
+                  </span>
+                </li>
+              </ul>
+
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => handleSwipe("Left")}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-2 text-slate-900 hover:bg-slate-50 transition">
+                  <ThumbsDown className="h-5 w-5" />
+                  Dislike
+                </button>
+                <button
+                  onClick={() => handleSwipe("Right")}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 text-white px-5 py-2 hover:opacity-90 transition">
+                  <ThumbsUp className="h-5 w-5" />
+                  Like
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

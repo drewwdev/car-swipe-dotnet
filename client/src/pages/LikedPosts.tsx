@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
+import PostImage from "../components/PostImage";
 
 interface Post {
   id: number;
@@ -14,6 +15,7 @@ interface Post {
   price: number;
   location: string;
   imageUrls: string[];
+  status?: "Active" | "Sold";
 }
 
 export default function LikedPosts() {
@@ -22,45 +24,89 @@ export default function LikedPosts() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [error, setError] = useState("");
 
+  const fmtPrice = (n: number) =>
+    n.toLocaleString(undefined, {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    });
+
   useEffect(() => {
     const fetchLikedPosts = async () => {
       try {
         const res = await axios.get("http://localhost:5277/api/posts/liked", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setPosts(res.data);
       } catch (err) {
-        console.error("❌ Failed to load liked posts:", err);
         setError("Failed to load liked posts.");
+        console.error("❌ Failed to load liked posts:", err);
       }
     };
-
     fetchLikedPosts();
   }, [token]);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <h2 className="text-2xl font-bold mb-4">Posts Liked by Other Users</h2>
-      {error && <p className="text-red-500">{error}</p>}
-      {posts.length === 0 ? (
-        <p>No liked posts yet.</p>
-      ) : (
-        <div className="grid gap-4">
-          {posts.map((post) => (
-            <div
-              key={post.id}
-              className="bg-white rounded shadow p-4 hover:bg-gray-50 cursor-pointer"
-              onClick={() => navigate(`/posts/${post.id}`)}>
-              <h3 className="text-xl font-semibold">{post.title}</h3>
-              <p className="text-gray-600">
-                {post.make} {post.model} — ${post.price}
-              </p>
-            </div>
-          ))}
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100 px-4 py-8">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-6 rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-6 shadow-sm">
+          <h2 className="text-2xl md:text-3xl font-bold text-slate-900">
+            Posts Liked by Other Users
+          </h2>
+          <p className="mt-1 text-slate-600">
+            Your listings that have received likes.
+          </p>
         </div>
-      )}
+
+        {error && <p className="mb-4 text-red-600">{error}</p>}
+
+        {posts.length === 0 ? (
+          <div className="rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-8 text-center shadow-sm">
+            <p className="text-slate-700">No liked posts yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {posts.map((post) => (
+              <button
+                key={post.id}
+                onClick={() => navigate(`/posts/${post.id}`)}
+                className="text-left group rounded-3xl border border-white/50 bg-white/70 backdrop-blur shadow-sm hover:shadow-md transition overflow-hidden">
+                <div className="relative">
+                  <PostImage
+                    urls={post.imageUrls}
+                    className="w-full h-44 object-cover"
+                  />
+                  <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-slate-900">
+                    {fmtPrice(post.price)}
+                  </div>
+                  {post.status && (
+                    <div
+                      className={[
+                        "absolute right-3 top-3 rounded-full px-2 py-1 text-xs font-medium",
+                        post.status === "Sold"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-emerald-100 text-emerald-700",
+                      ].join(" ")}>
+                      {post.status}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold text-slate-900 group-hover:underline">
+                    {post.title}
+                  </h3>
+                  <p className="mt-1 text-slate-600">
+                    {post.make} {post.model} • {post.year} •{" "}
+                    {post.mileage.toLocaleString()} mi
+                  </p>
+                  <p className="text-slate-500 text-sm">{post.location}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
