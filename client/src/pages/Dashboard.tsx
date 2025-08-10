@@ -10,7 +10,29 @@ import {
   PlusCircle,
   Compass,
   Gauge,
+  Clock,
 } from "lucide-react";
+
+type StatsOverview = {
+  myPosts: number;
+  carsSold: number;
+  carsBought: number;
+  likedByMe: number;
+  dislikedByMe: number;
+  likedByOthers: number;
+  cashEarned: number;
+  cashSpent: number;
+  activeChats: number;
+};
+
+type ActivityItem = {
+  createdAt: string;
+  type: string;
+  summary: string;
+  postId?: number;
+  chatId?: number;
+  saleId?: number;
+};
 
 export default function Dashboard() {
   const { user, logout, token } = useAuth();
@@ -21,11 +43,64 @@ export default function Dashboard() {
     likedByOthers: 0,
     chats: 0,
   });
+  const [overview, setOverview] = useState<StatsOverview | null>(null);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
+
+  const money = (n: number) =>
+    n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+
+  const timeAgo = (iso: string) => {
+    const t = new Date(iso).getTime();
+    const d = Math.max(0, Date.now() - t);
+    const m = Math.floor(d / 60000);
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h`;
+    const days = Math.floor(h / 24);
+    return `${days}d`;
+  };
+
+  const activityIcon = (type: string) => {
+    switch (type) {
+      case "PostCreated":
+        return Car;
+      case "SaleClosedAsSeller":
+      case "SaleClosedAsBuyer":
+        return DollarSign;
+      case "SwipeReceived":
+        return Heart;
+      case "MessageSent":
+      case "MessageReceived":
+        return MessageSquare;
+      default:
+        return Clock;
+    }
+  };
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const [o, a] = await Promise.all([
+          axios.get("http://localhost:5277/api/stats/overview", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("http://localhost:5277/api/stats/activity-basic?limit=10", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
+        setOverview(o.data);
+        setActivity(a.data);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    run();
+  }, [token]);
 
   useEffect(() => {
     const fetchStuff = async () => {
@@ -51,7 +126,6 @@ export default function Dashboard() {
         console.error("Failed to fetch dashboard data:", err);
       }
     };
-
     fetchStuff();
   }, [token]);
 
@@ -61,7 +135,7 @@ export default function Dashboard() {
     icon: Icon,
   }: {
     label: string;
-    value: number;
+    value: number | string;
     icon;
   }) => (
     <div className="flex items-center gap-3 rounded-2xl bg-white/70 backdrop-blur border border-white/40 px-4 py-3 shadow-sm">
@@ -126,6 +200,63 @@ export default function Dashboard() {
               icon={MessageSquare}
             />
           </div>
+
+          {overview && (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-4">
+              <Stat label="Cars Sold" value={overview.carsSold} icon={Car} />
+              <Stat
+                label="Cars Bought"
+                value={overview.carsBought}
+                icon={Car}
+              />
+              <Stat
+                label="Cash Earned"
+                value={money(overview.cashEarned)}
+                icon={Gauge}
+              />
+              <Stat
+                label="Cash Spent"
+                value={money(overview.cashSpent)}
+                icon={Gauge}
+              />
+            </div>
+          )}
+
+          {activity.length > 0 && (
+            <div className="mt-5 rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-6 shadow-sm">
+              <div className="mb-3 text-lg font-semibold text-slate-900">
+                Recent Activity
+              </div>
+              <div className="divide-y divide-slate-200/60">
+                {activity.slice(0, 10).map((it, idx) => {
+                  const Icon = activityIcon(it.type);
+                  const onClick = () => {
+                    if (it.postId) navigate(`/posts/${it.postId}`);
+                    else if (it.chatId) navigate(`/chats/${it.chatId}`);
+                  };
+                  return (
+                    <button
+                      key={idx}
+                      onClick={onClick}
+                      className="w-full text-left flex items-center gap-3 py-3 hover:bg-white/60 rounded-xl px-2 transition">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shrink-0">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <div className="flex-1">
+                        <div className="text-slate-900 font-medium">
+                          {it.summary}
+                        </div>
+                        <div className="text-xs text-slate-500">{it.type}</div>
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {timeAgo(it.createdAt)}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<Swipe> Swipes { get; set; }
     public DbSet<Chat> Chats { get; set; }
     public DbSet<Message> Messages { get; set; }
+    public DbSet<Sale> Sales { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

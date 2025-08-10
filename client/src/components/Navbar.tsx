@@ -4,7 +4,6 @@ import {
   Car,
   Compass,
   PlusCircle,
-  CarFront,
   Heart,
   MessageSquare,
   Menu,
@@ -86,7 +85,6 @@ export default function Navbar() {
                 icon={PlusCircle}
                 label="Create Post"
               />
-              <NavItem to="/my-posts" icon={CarFront} label="My Posts" />
               <NavItem to="/liked-posts" icon={Heart} label="Liked by Others" />
               <NavItem to="/chats" icon={MessageSquare} label="Chats" />
             </div>
@@ -110,7 +108,6 @@ export default function Navbar() {
                 icon={PlusCircle}
                 label="Create Post"
               />
-              <NavItem to="/my-posts" icon={CarFront} label="My Posts" />
               <NavItem to="/liked-posts" icon={Heart} label="Liked by Others" />
               <NavItem to="/chats" icon={MessageSquare} label="Chats" />
             </div>
