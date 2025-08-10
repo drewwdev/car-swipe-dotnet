@@ -47,6 +47,9 @@ export default function Dashboard() {
   const [overview, setOverview] = useState<StatsOverview | null>(null);
   const [activity, setActivity] = useState<ActivityItem[]>([]);
 
+  const ACTIVITY_LIMIT = 20;
+  const ACTIVITY_DAYS = 30;
+
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -88,10 +91,16 @@ export default function Dashboard() {
       try {
         const [o, a] = await Promise.all([
           api.get("/api/stats/overview"),
-          api.get("/api/stats/activity-basic?limit=10"),
+          api.get(`/api/stats/activity-basic?limit=${ACTIVITY_LIMIT}`),
         ]);
+
+        const cutoff = Date.now() - ACTIVITY_DAYS * 24 * 60 * 60 * 1000;
+        const pruned = (a.data as ActivityItem[])
+          .filter((it) => new Date(it.createdAt).getTime() >= cutoff)
+          .slice(0, ACTIVITY_LIMIT);
+
         setOverview(o.data);
-        setActivity(a.data);
+        setActivity(pruned);
       } catch (e) {
         console.error(e);
       }
@@ -127,7 +136,7 @@ export default function Dashboard() {
   }: {
     label: string;
     value: number | string;
-    icon: IconType;
+    icon;
   }) => (
     <div className="flex items-center gap-3 rounded-2xl bg-white/70 backdrop-blur border border-white/40 px-4 py-3 shadow-sm">
       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
@@ -213,13 +222,47 @@ export default function Dashboard() {
             </div>
           )}
 
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <button
+              onClick={() => navigate("/swipe")}
+              className="group flex items-center gap-3 rounded-2xl px-4 py-3 text-left bg-white/70 backdrop-blur border border-white/40 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 ring-1 ring-indigo-300/60 hover:ring-indigo-400/70">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white group-hover:scale-[1.03] transition">
+                <Compass className="h-5 w-5" />
+              </span>
+              <span className="flex-1">
+                <span className="block font-semibold text-slate-900">
+                  Browse Posts
+                </span>
+                <span className="block text-sm text-slate-500">
+                  Swipe through available cars
+                </span>
+              </span>
+            </button>
+
+            <button
+              onClick={() => navigate("/my-posts")}
+              className="group flex items-center gap-3 rounded-2xl px-4 py-3 text-left bg-white/70 backdrop-blur border border-white/40 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 ring-1 ring-slate-200/60 hover:ring-slate-300/70">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white group-hover:scale-[1.03] transition">
+                <Car className="h-5 w-5" />
+              </span>
+              <span className="flex-1">
+                <span className="block font-semibold text-slate-900">
+                  My Posts
+                </span>
+                <span className="block text-sm text-slate-500">
+                  Manage your listings
+                </span>
+              </span>
+            </button>
+          </div>
+
           {activity.length > 0 && (
             <div className="mt-5 rounded-3xl border border-white/50 bg-white/70 backdrop-blur p-6 shadow-sm">
               <div className="mb-3 text-lg font-semibold text-slate-900">
                 Recent Activity
               </div>
               <div className="divide-y divide-slate-200/60">
-                {activity.slice(0, 10).map((it, idx) => {
+                {activity.map((it, idx) => {
                   const Icon = activityIcon(it.type);
                   const onClick = () => {
                     if (it.postId) navigate(`/posts/${it.postId}`);
@@ -248,42 +291,6 @@ export default function Dashboard() {
               </div>
             </div>
           )}
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-6xl px-4 pb-14">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <button
-            onClick={() => navigate("/swipe")}
-            className="group flex items-center gap-3 rounded-2xl px-4 py-3 text-left bg-white/70 backdrop-blur border border-white/40 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 ring-1 ring-indigo-300/60 hover:ring-indigo-400/70">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white group-hover:scale-[1.03] transition">
-              <Compass className="h-5 w-5" />
-            </span>
-            <span className="flex-1">
-              <span className="block font-semibold text-slate-900">
-                Browse Posts
-              </span>
-              <span className="block text-sm text-slate-500">
-                Swipe through available cars
-              </span>
-            </span>
-          </button>
-
-          <button
-            onClick={() => navigate("/my-posts")}
-            className="group flex items-center gap-3 rounded-2xl px-4 py-3 text-left bg-white/70 backdrop-blur border border-white/40 shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 ring-1 ring-slate-200/60 hover:ring-slate-300/70">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white group-hover:scale-[1.03] transition">
-              <Car className="h-5 w-5" />
-            </span>
-            <span className="flex-1">
-              <span className="block font-semibold text-slate-900">
-                My Posts
-              </span>
-              <span className="block text-sm text-slate-500">
-                Manage your listings
-              </span>
-            </span>
-          </button>
         </div>
       </div>
     </div>
