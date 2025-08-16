@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("car-swipe-dotnet")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a64aec9fcd311ab93fe57adf46a1fccbf395d3c2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+00389a4579ed06900b5204ba11379dc96102b999")]
 [assembly: System.Reflection.AssemblyProductAttribute("car-swipe-dotnet")]
 [assembly: System.Reflection.AssemblyTitleAttribute("car-swipe-dotnet")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

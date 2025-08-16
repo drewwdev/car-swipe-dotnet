@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: car-swipe-api
+    env: docker
+    plan: starter
+    dockerfilePath: server/Dockerfile
+    autoDeploy: true
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: ASPNETCORE_URLS
+        value: http://0.0.0.0:10000
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: car-swipe-db
+          property: connectionString
+      - key: Jwt__Issuer
+        value: https://car-swipe-api.onrender.com
+      - key: Jwt__Audience
+        value: https://car-swipe-frontend.onrender.com
+      - key: Jwt__Key_New
+        generateValue: true
+      - key: AllowedOrigins__0
+        value: https://car-swipe-frontend.onrender.com
+  - type: static
+    name: car-swipe-frontend
+    rootDir: client
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://car-swipe-api.onrender.com
+databases:
+  - name: car-swipe-db
+    plan: starter
