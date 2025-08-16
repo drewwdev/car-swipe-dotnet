@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import PostImage from "../components/PostImage";
 import api from "../lib/api";
+import { isAxiosError } from "../lib/http";
 
 interface Post {
   id: number;
@@ -30,7 +31,7 @@ interface Post {
 }
 
 export default function PostDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { token, user } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
@@ -56,17 +57,32 @@ export default function PostDetail() {
 
   useEffect(() => {
     const ctrl = new AbortController();
+
     const fetchPost = async () => {
       try {
         const res = await api.get(`/api/posts/${id}`, { signal: ctrl.signal });
         setPost(res.data);
         setSelectedIdx(0);
-      } catch (err) {
-        if (err?.name === "CanceledError") return;
-        setError("Failed to fetch post.");
+      } catch (err: unknown) {
+        if (
+          (err instanceof DOMException && err.name === "AbortError") ||
+          (isAxiosError(err) &&
+            (err.name === "CanceledError" || err.code === "ERR_CANCELED"))
+        ) {
+          return;
+        }
+
+        const message = isAxiosError(err)
+          ? err.response?.data?.message ?? err.message
+          : err instanceof Error
+          ? err.message
+          : "Failed to fetch post.";
+
+        setError(message);
         console.error("❌ Post fetch error:", err);
       }
     };
+
     if (id) fetchPost();
     return () => ctrl.abort();
   }, [id]);

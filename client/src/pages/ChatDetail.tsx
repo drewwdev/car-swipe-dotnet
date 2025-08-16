@@ -4,6 +4,7 @@ import { useAuth } from "../context/useAuth";
 import * as signalR from "@microsoft/signalr";
 import { MessageSquare, Send } from "lucide-react";
 import api from "../lib/api";
+import { isAxiosError } from "../lib/http";
 
 interface Message {
   id: number;
@@ -75,9 +76,15 @@ export default function ChatDetail() {
       try {
         const res = await api.get(`/api/chat/${chatId}/messages`);
         setMessages(res.data);
-      } catch (err) {
-        setError("Failed to load messages.");
+      } catch (err: unknown) {
         console.error("Failed to load messages:", err);
+        if (isAxiosError(err)) {
+          setError(err.response?.data?.message ?? "Failed to load messages.");
+        } else if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Failed to load messages.");
+        }
       }
     };
     const fetchMeta = async () => {
@@ -92,7 +99,7 @@ export default function ChatDetail() {
             setSoldBanner({ amount: 0, when: new Date().toISOString() });
           }
         }
-      } catch (err) {
+      } catch (err: unknown) {
         console.error("Failed to load chat meta:", err);
       }
     };
@@ -104,7 +111,10 @@ export default function ChatDetail() {
 
   useEffect(() => {
     const baseUrl =
-      (import.meta as unknown).env.VITE_API_URL || "http://localhost:5277";
+      import.meta.env.VITE_API_BASE_URL ||
+      (window.location.protocol === "https:"
+        ? "https://localhost:7277"
+        : "http://localhost:5277");
 
     const hub = new signalR.HubConnectionBuilder()
       .withUrl(`${baseUrl}/chathub?chatId=${chatId}`, {
@@ -151,9 +161,15 @@ export default function ChatDetail() {
       setSending(true);
       await connection.invoke("SendMessage", chatIdNum, newMessage.trim());
       setNewMessage("");
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to send message:", err);
-      setError("Failed to send message.");
+      if (isAxiosError(err)) {
+        setError(err.response?.data?.message ?? "Failed to send message.");
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Failed to send message.");
+      }
     } finally {
       setSending(false);
     }
@@ -172,14 +188,19 @@ export default function ChatDetail() {
       await api.post(`/api/chat/${chatId}/close-sale`, { amount: amountNum });
       setSoldBanner({ amount: amountNum, when: new Date().toISOString() });
       setSaleOpen(false);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Close sale failed:", err);
-      const msg =
-        err?.response?.status === 403
-          ? "Only the seller can mark this as sold."
-          : err?.response?.status === 409
-          ? "Already sold."
-          : "Failed to mark as sold.";
+      let msg = "Failed to mark as sold.";
+      if (isAxiosError(err)) {
+        msg =
+          err.response?.status === 403
+            ? "Only the seller can mark this as sold."
+            : err.response?.status === 409
+            ? "Already sold."
+            : err.response?.data?.message ?? msg;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      }
       setError(msg);
     } finally {
       setClosingSale(false);

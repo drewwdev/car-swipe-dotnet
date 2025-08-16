@@ -1,6 +1,6 @@
 import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, ComponentType } from "react";
 import {
   Car,
   Heart,
@@ -13,6 +13,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import api from "../lib/api";
+import { isAxiosError } from "../lib/http";
 
 type StatsOverview = {
   myPosts: number;
@@ -101,8 +102,15 @@ export default function Dashboard() {
 
         setOverview(o.data);
         setActivity(pruned);
-      } catch (e) {
-        console.error(e);
+      } catch (e: unknown) {
+        console.error(
+          "❌ dashboard overview/activity error:",
+          isAxiosError(e)
+            ? e.response?.data?.message ?? e.message
+            : e instanceof Error
+            ? e.message
+            : "Failed to load overview/activity."
+        );
       }
     };
     if (token) run();
@@ -122,8 +130,15 @@ export default function Dashboard() {
           likedByOthers: liked.data.length ?? 0,
           chats: chats.data.length ?? 0,
         });
-      } catch (err) {
-        console.error("Failed to fetch dashboard data:", err);
+      } catch (err: unknown) {
+        console.error(
+          "❌ dashboard mini-stats error:",
+          isAxiosError(err)
+            ? err.response?.data?.message ?? err.message
+            : err instanceof Error
+            ? err.message
+            : "Failed to fetch dashboard data."
+        );
       }
     };
     if (token) fetchStuff();
@@ -136,7 +151,7 @@ export default function Dashboard() {
   }: {
     label: string;
     value: number | string;
-    icon;
+    icon: ComponentType<{ className?: string }>;
   }) => (
     <div className="flex items-center gap-3 rounded-2xl bg-white/70 backdrop-blur border border-white/40 px-4 py-3 shadow-sm">
       <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">

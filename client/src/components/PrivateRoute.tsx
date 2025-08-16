@@ -1,8 +1,9 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
+import { ReactNode } from "react";
 
 interface Props {
-  children: JSX.Element;
+  children: ReactNode;
 }
 
 export default function PrivateRoute({ children }: Props) {
@@ -12,5 +13,5 @@ export default function PrivateRoute({ children }: Props) {
     return <Navigate to="/login" replace />;
   }
 
-  return children;
+  return <>{children}</>;
 }

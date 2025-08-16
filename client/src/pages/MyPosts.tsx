@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import PostImage from "../components/PostImage";
 import api from "../lib/api";
+import { isAxiosError } from "../lib/http";
 
 interface Post {
   id: number;
@@ -33,16 +34,29 @@ export default function MyPosts() {
 
   useEffect(() => {
     const ctrl = new AbortController();
+
     const fetchPosts = async () => {
       try {
         const res = await api.get("/api/posts/me", { signal: ctrl.signal });
         setPosts(res.data);
-      } catch (err) {
-        if (err?.name === "CanceledError") return;
-        setError("Failed to load your posts.");
-        console.error(err);
+      } catch (err: unknown) {
+        if (
+          (err instanceof DOMException && err.name === "AbortError") ||
+          (isAxiosError(err) &&
+            (err.name === "CanceledError" || err.code === "ERR_CANCELED"))
+        ) {
+          return;
+        }
+        const message = isAxiosError(err)
+          ? err.response?.data?.message ?? err.message
+          : err instanceof Error
+          ? err.message
+          : "Failed to load your posts.";
+        setError(message);
+        console.error("❌ fetch posts error:", err);
       }
     };
+
     fetchPosts();
     return () => ctrl.abort();
   }, []);
@@ -71,9 +85,14 @@ export default function MyPosts() {
           : "Post set back to active."
       );
       setConfirmOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to update status.");
+    } catch (err: unknown) {
+      console.error("❌ update status error:", err);
+      const message = isAxiosError(err)
+        ? err.response?.data?.message ?? "Failed to update status."
+        : err instanceof Error
+        ? err.message
+        : "Failed to update status.";
+      toast.error(message);
     } finally {
       setUpdating(false);
       setPendingId(null);
@@ -86,9 +105,14 @@ export default function MyPosts() {
       await api.delete(`/api/posts/${postId}`);
       setPosts((prev) => prev.filter((p) => p.id !== postId));
       toast.success("Post deleted!");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete post.");
+    } catch (err: unknown) {
+      console.error("❌ delete post error:", err);
+      const message = isAxiosError(err)
+        ? err.response?.data?.message ?? "Failed to delete post."
+        : err instanceof Error
+        ? err.message
+        : "Failed to delete post.";
+      toast.error(message);
     }
   };
 

@@ -3,6 +3,7 @@ import { login as apiLogin } from "../services/auth";
 import { useAuth } from "../context/useAuth";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, LogIn } from "lucide-react";
+import { isAxiosError } from "../lib/http";
 
 export default function Login() {
   const { login } = useAuth();
@@ -23,8 +24,13 @@ export default function Login() {
       const { user, token } = await apiLogin({ email, password });
       login(user, token);
       navigate("/dashboard");
-    } catch (err) {
-      setError(err?.message || "Login failed");
+    } catch (err: unknown) {
+      const message = isAxiosError(err)
+        ? err.response?.data?.message ?? err.message
+        : err instanceof Error
+        ? err.message
+        : "Login failed";
+      setError(message);
     } finally {
       setSubmitting(false);
     }
