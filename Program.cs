@@ -1,14 +1,22 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using static AppDbContext;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using static AppDbContext;
+
+DotNetEnv.Env.Load(".env.local");
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+string? Cfg(string key)
+{
+    var v = builder.Configuration[key];
+    return string.IsNullOrWhiteSpace(v) ? builder.Configuration[key.Replace("Jwt:", "JWT:")] : v;
+}
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -33,8 +41,8 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     };
 });
 
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -43,10 +51,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidIssuer = Cfg("Jwt:Issuer"),
+            ValidAudience = Cfg("Jwt:Audience"),
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+                Encoding.UTF8.GetBytes(Cfg("Jwt:Key") ?? Cfg("JWT:SigningKey") ?? throw new InvalidOperationException("JWT signing key missing")))
         };
 
         options.Events = new JwtBearerEvents
@@ -54,31 +62,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnMessageReceived = context =>
             {
                 var accessToken = context.Request.Query["access_token"];
-
                 var path = context.HttpContext.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) &&
-                    path.StartsWithSegments("/chathub"))
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
                 {
                     context.Token = accessToken;
                 }
-
                 return Task.CompletedTask;
             }
         };
     });
 
-builder.Services.AddSignalR()
-.AddHubOptions<ChatHub>(options =>
-{
-    options.EnableDetailedErrors = true;
-});
-
+builder.Services.AddSignalR(options => { options.EnableDetailedErrors = true; });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new() { Title = "CarSwipe API", Version = "v1" });
-
     options.AddSecurityDefinition("Bearer", new()
     {
         Name = "Authorization",
@@ -88,7 +87,6 @@ builder.Services.AddSwaggerGen(options =>
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Description = "Enter 'Bearer' followed by your JWT token."
     });
-
     options.AddSecurityRequirement(new()
     {
         {
@@ -100,50 +98,60 @@ builder.Services.AddSwaggerGen(options =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
 
-builder.Services.AddSignalR();
-builder.Services.AddScoped<AuthService>();
-
-builder.Services.AddCors(options =>
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+builder.Services.AddCors(o =>
 {
-    options.AddDefaultPolicy(policy =>
-    {
-        policy
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .SetIsOriginAllowed(_ => true)
-            .AllowCredentials();
-    });
+    o.AddPolicy("AppCors", p => p
+        .WithOrigins(allowedOrigins)
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
 });
+
+builder.Services.AddHealthChecks();
+
+builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    DbInitializer.Seed(db);
+    db.Database.Migrate();
+
+    if (app.Environment.IsDevelopment())
+    {
+        DbInitializer.Seed(db);
+    }
+}
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
 }
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
-}
-else
-{
-    app.UseHttpsRedirection();
 }
 
-app.UseCors();
-
+app.UseCors("AppCors");
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 app.MapHub<ChatHub>("/chathub");
+app.MapHealthChecks("/health");
 
 app.Run();

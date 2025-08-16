@@ -10,10 +10,11 @@
 using System;
 using System.Reflection;
 
+[assembly: Microsoft.Extensions.Configuration.UserSecrets.UserSecretsIdAttribute("437a13e5-8fc9-437e-b9d0-ab1e8aeb1f82")]
 [assembly: System.Reflection.AssemblyCompanyAttribute("car-swipe-dotnet")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dabdcd7f15b79a81b96843d4097fc07257141f00")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a64aec9fcd311ab93fe57adf46a1fccbf395d3c2")]
 [assembly: System.Reflection.AssemblyProductAttribute("car-swipe-dotnet")]
 [assembly: System.Reflection.AssemblyTitleAttribute("car-swipe-dotnet")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
