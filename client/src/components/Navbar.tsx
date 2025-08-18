@@ -8,7 +8,7 @@ import {
   MessageSquare,
   Menu,
 } from "lucide-react";
-import { useAuth } from "../context/useAuth.ts";
+import { useAuth } from "../context/useAuth";
 import api from "../lib/api";
 
 type IconType = React.ElementType;

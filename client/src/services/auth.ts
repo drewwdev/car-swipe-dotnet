@@ -1,4 +1,6 @@
 import axios from "axios";
+import api from "../lib/api";
+import type { User } from "../types/User";
 
 const API_BASE = "http://localhost:5277/api";
 
@@ -18,8 +20,8 @@ export interface LoginRequest {
   password: string;
 }
 
-export async function login(data: LoginRequest): Promise<LoginResponse> {
-  const res = await axios.post<LoginResponse>(`${API_BASE}/auth/login`, data);
+export async function login(payload: { email: string; password: string }) {
+  const res = await api.post<LoginResponse>("/api/auth/login", payload);
   return res.data;
 }
 

@@ -166,8 +166,7 @@ export default function Dashboard() {
     </div>
   );
 
-  const welcomeName =
-    (user as DisplayUser)?.username ?? (user as DisplayUser)?.email ?? "";
+  const welcomeName = user?.username ?? user?.email ?? "";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100">
