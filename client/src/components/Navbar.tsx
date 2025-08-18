@@ -22,7 +22,7 @@ export default function Navbar() {
     let cancelled = false;
     const fetchLiked = async () => {
       try {
-        const res = await api.get("/api/posts/liked");
+        const res = await api.get("/posts/liked");
         if (!cancelled) setHasLikedPosts((res.data?.length ?? 0) > 0);
       } catch {
         if (!cancelled) setHasLikedPosts(false);

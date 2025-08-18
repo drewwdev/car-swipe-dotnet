@@ -91,8 +91,8 @@ export default function Dashboard() {
     const run = async () => {
       try {
         const [o, a] = await Promise.all([
-          api.get("/api/stats/overview"),
-          api.get(`/api/stats/activity-basic?limit=${ACTIVITY_LIMIT}`),
+          api.get("/stats/overview"),
+          api.get(`/stats/activity-basic?limit=${ACTIVITY_LIMIT}`),
         ]);
 
         const cutoff = Date.now() - ACTIVITY_DAYS * 24 * 60 * 60 * 1000;
@@ -120,9 +120,9 @@ export default function Dashboard() {
     const fetchStuff = async () => {
       try {
         const [mine, liked, chats] = await Promise.all([
-          api.get("/api/posts/me"),
-          api.get("/api/posts/liked"),
-          api.get("/api/chat/me"),
+          api.get("/posts/me"),
+          api.get("/posts/liked"),
+          api.get("/chat/me"),
         ]);
 
         setStats({
