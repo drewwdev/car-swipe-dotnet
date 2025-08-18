@@ -4,12 +4,6 @@ import type { User } from "../types/User";
 
 const API_BASE = "http://localhost:5277/api";
 
-export interface User {
-  id: number;
-  email: string;
-  name: string;
-}
-
 export interface LoginResponse {
   user: User;
   token: string;
