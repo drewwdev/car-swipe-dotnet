@@ -47,12 +47,16 @@ export default function MyPosts() {
         ) {
           return;
         }
-        const message = isAxiosError(err)
-          ? err.response?.data?.message ?? err.message
-          : err instanceof Error
-          ? err.message
-          : "Failed to load your posts.";
-        setError(message);
+
+        if (isAxiosError(err)) {
+          const data = err.response?.data as { message?: string } | undefined;
+          setError(data?.message ?? err.message);
+        } else if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Failed to load your posts.");
+        }
+
         console.error("❌ fetch posts error:", err);
       }
     };
@@ -87,11 +91,15 @@ export default function MyPosts() {
       setConfirmOpen(false);
     } catch (err: unknown) {
       console.error("❌ update status error:", err);
-      const message = isAxiosError(err)
-        ? err.response?.data?.message ?? "Failed to update status."
-        : err instanceof Error
-        ? err.message
-        : "Failed to update status.";
+
+      let message = "Failed to update status.";
+      if (isAxiosError(err)) {
+        const data = err.response?.data as { message?: string } | undefined;
+        message = data?.message ?? err.message ?? message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+
       toast.error(message);
     } finally {
       setUpdating(false);
@@ -107,11 +115,15 @@ export default function MyPosts() {
       toast.success("Post deleted!");
     } catch (err: unknown) {
       console.error("❌ delete post error:", err);
-      const message = isAxiosError(err)
-        ? err.response?.data?.message ?? "Failed to delete post."
-        : err instanceof Error
-        ? err.message
-        : "Failed to delete post.";
+
+      let message = "Failed to delete post.";
+      if (isAxiosError(err)) {
+        const data = err.response?.data as { message?: string } | undefined;
+        message = data?.message ?? err.message ?? message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+
       toast.error(message);
     }
   };

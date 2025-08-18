@@ -72,13 +72,15 @@ export default function PostDetail() {
           return;
         }
 
-        const message = isAxiosError(err)
-          ? err.response?.data?.message ?? err.message
-          : err instanceof Error
-          ? err.message
-          : "Failed to fetch post.";
+        if (isAxiosError(err)) {
+          const data = err.response?.data as { message?: string } | undefined;
+          setError(data?.message ?? err.message);
+        } else if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Failed to fetch post.");
+        }
 
-        setError(message);
         console.error("❌ Post fetch error:", err);
       }
     };

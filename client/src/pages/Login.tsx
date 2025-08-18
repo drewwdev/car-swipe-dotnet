@@ -25,11 +25,15 @@ export default function Login() {
       login(user, token);
       navigate("/dashboard");
     } catch (err: unknown) {
-      const message = isAxiosError(err)
-        ? err.response?.data?.message ?? err.message
-        : err instanceof Error
-        ? err.message
-        : "Login failed";
+      let message = "Login failed";
+
+      if (isAxiosError(err)) {
+        const data = err.response?.data as { message?: string } | undefined;
+        message = data?.message ?? err.message ?? message;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+
       setError(message);
     } finally {
       setSubmitting(false);

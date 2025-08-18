@@ -103,14 +103,14 @@ export default function Dashboard() {
         setOverview(o.data);
         setActivity(pruned);
       } catch (e: unknown) {
-        console.error(
-          "❌ dashboard overview/activity error:",
-          isAxiosError(e)
-            ? e.response?.data?.message ?? e.message
-            : e instanceof Error
-            ? e.message
-            : "Failed to load overview/activity."
-        );
+        let msg = "Failed to load overview/activity.";
+        if (isAxiosError(e)) {
+          const data = e.response?.data as { message?: string } | undefined;
+          msg = data?.message ?? e.message ?? msg;
+        } else if (e instanceof Error) {
+          msg = e.message;
+        }
+        console.error("❌ dashboard overview/activity error:", msg);
       }
     };
     if (token) run();
@@ -131,14 +131,14 @@ export default function Dashboard() {
           chats: chats.data.length ?? 0,
         });
       } catch (err: unknown) {
-        console.error(
-          "❌ dashboard mini-stats error:",
-          isAxiosError(err)
-            ? err.response?.data?.message ?? err.message
-            : err instanceof Error
-            ? err.message
-            : "Failed to fetch dashboard data."
-        );
+        let msg = "Failed to fetch dashboard data.";
+        if (isAxiosError(err)) {
+          const data = err.response?.data as { message?: string } | undefined;
+          msg = data?.message ?? err.message ?? msg;
+        } else if (err instanceof Error) {
+          msg = err.message;
+        }
+        console.error("❌ dashboard mini-stats error:", msg);
       }
     };
     if (token) fetchStuff();
@@ -166,6 +166,9 @@ export default function Dashboard() {
     </div>
   );
 
+  const welcomeName =
+    (user as DisplayUser)?.username ?? (user as DisplayUser)?.email ?? "";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100">
       <div className="mx-auto max-w-6xl px-4 pt-10 pb-6">
@@ -176,11 +179,7 @@ export default function Dashboard() {
                 <Gauge className="h-4 w-4" /> Dashboard
               </div>
               <h1 className="mt-3 text-2xl md:text-3xl font-bold text-slate-900">
-                Welcome
-                {user?.username || user?.email
-                  ? `, ${user?.username ?? user?.email}`
-                  : ""}{" "}
-                👋
+                Welcome{welcomeName ? `, ${welcomeName}` : ""} 👋
               </h1>
               <p className="mt-1 text-slate-600">
                 Quick snapshot of your account.

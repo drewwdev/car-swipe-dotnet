@@ -78,15 +78,19 @@ export default function ChatDetail() {
         setMessages(res.data);
       } catch (err: unknown) {
         console.error("Failed to load messages:", err);
+
+        let msg = "Failed to load messages.";
         if (isAxiosError(err)) {
-          setError(err.response?.data?.message ?? "Failed to load messages.");
+          const data = err.response?.data as { message?: string } | undefined;
+          msg = data?.message ?? err.message ?? msg;
         } else if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Failed to load messages.");
+          msg = err.message;
         }
+
+        setError(msg);
       }
     };
+
     const fetchMeta = async () => {
       try {
         const res = await api.get("/api/chat/me");
@@ -163,13 +167,16 @@ export default function ChatDetail() {
       setNewMessage("");
     } catch (err: unknown) {
       console.error("Failed to send message:", err);
+
+      let msg = "Failed to send message.";
       if (isAxiosError(err)) {
-        setError(err.response?.data?.message ?? "Failed to send message.");
+        const data = err.response?.data as { message?: string } | undefined;
+        msg = data?.message ?? err.message ?? msg;
       } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Failed to send message.");
+        msg = err.message;
       }
+
+      setError(msg);
     } finally {
       setSending(false);
     }
@@ -190,17 +197,21 @@ export default function ChatDetail() {
       setSaleOpen(false);
     } catch (err: unknown) {
       console.error("Close sale failed:", err);
+
       let msg = "Failed to mark as sold.";
       if (isAxiosError(err)) {
-        msg =
-          err.response?.status === 403
-            ? "Only the seller can mark this as sold."
-            : err.response?.status === 409
-            ? "Already sold."
-            : err.response?.data?.message ?? msg;
+        if (err.response?.status === 403) {
+          msg = "Only the seller can mark this as sold.";
+        } else if (err.response?.status === 409) {
+          msg = "Already sold.";
+        } else {
+          const data = err.response?.data as { message?: string } | undefined;
+          msg = data?.message ?? err.message ?? msg;
+        }
       } else if (err instanceof Error) {
         msg = err.message;
       }
+
       setError(msg);
     } finally {
       setClosingSale(false);
