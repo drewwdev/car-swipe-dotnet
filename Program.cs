@@ -160,6 +160,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseRouting();
 app.UseCors("AppCors");
 app.UseAuthentication();
 app.UseAuthorization();

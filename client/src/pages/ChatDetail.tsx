@@ -114,16 +114,15 @@ export default function ChatDetail() {
   }, [chatId, token, chatIdNum]);
 
   useEffect(() => {
-    const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(
+    const apiBase = (import.meta.env.VITE_API_BASE_URL || "").trim();
+    const apiOrigin = apiBase
+      ? new URL(apiBase, window.location.origin).origin
+      : window.location.origin;
+
+    const hubUrl = `${apiOrigin.replace(
       /\/+$/,
       ""
-    );
-
-    const hubBase = /\/api$/i.test(apiBase)
-      ? ""
-      : (apiBase || window.location.origin).replace(/\/+$/, "");
-
-    const hubUrl = `${hubBase}/chathub?chatId=${chatId}`;
+    )}/chathub?chatId=${encodeURIComponent(String(chatId))}`;
 
     const hub = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
