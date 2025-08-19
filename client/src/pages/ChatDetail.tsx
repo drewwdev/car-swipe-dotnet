@@ -74,7 +74,7 @@ export default function ChatDetail() {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const res = await api.get(`/api/chat/${chatId}/messages`);
+        const res = await api.get(`/chat/${chatId}/messages`);
         setMessages(res.data);
       } catch (err: unknown) {
         console.error("Failed to load messages:", err);
@@ -93,7 +93,7 @@ export default function ChatDetail() {
 
     const fetchMeta = async () => {
       try {
-        const res = await api.get("/api/chat/me");
+        const res = await api.get("/chat/me");
         const meta: ChatMeta | undefined = (res.data as ChatMeta[]).find(
           (c) => c.id === chatIdNum
         );
@@ -192,7 +192,7 @@ export default function ChatDetail() {
         setClosingSale(false);
         return;
       }
-      await api.post(`/api/chat/${chatId}/close-sale`, { amount: amountNum });
+      await api.post(`/chat/${chatId}/close-sale`, { amount: amountNum });
       setSoldBanner({ amount: amountNum, when: new Date().toISOString() });
       setSaleOpen(false);
     } catch (err: unknown) {

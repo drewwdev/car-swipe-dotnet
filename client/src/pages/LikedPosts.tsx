@@ -33,7 +33,7 @@ export default function LikedPosts() {
   useEffect(() => {
     const fetchLikedPosts = async () => {
       try {
-        const res = await api.get("/api/posts/liked");
+        const res = await api.get("/posts/liked");
         setPosts(res.data);
       } catch (err) {
         setError("Failed to load liked posts.");

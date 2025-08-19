@@ -60,7 +60,7 @@ export default function PostDetail() {
 
     const fetchPost = async () => {
       try {
-        const res = await api.get(`/api/posts/${id}`, { signal: ctrl.signal });
+        const res = await api.get(`/posts/${id}`, { signal: ctrl.signal });
         setPost(res.data);
         setSelectedIdx(0);
       } catch (err: unknown) {

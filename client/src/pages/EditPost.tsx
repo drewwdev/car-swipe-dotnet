@@ -28,7 +28,7 @@ export default function EditPost() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const res = await api.get(`/api/posts/${id}`);
+        const res = await api.get(`/posts/${id}`);
         setFormData(res.data);
       } catch (err) {
         setError("Failed to load post.");
@@ -73,7 +73,7 @@ export default function EditPost() {
     setError("");
 
     try {
-      await api.put(`/api/posts/${id}`, {
+      await api.put(`/posts/${id}`, {
         title: formData.title,
         description: formData.description,
         price: formData.price,

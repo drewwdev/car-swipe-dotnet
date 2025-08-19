@@ -37,7 +37,7 @@ export default function MyPosts() {
 
     const fetchPosts = async () => {
       try {
-        const res = await api.get("/api/posts/me", { signal: ctrl.signal });
+        const res = await api.get("/posts/me", { signal: ctrl.signal });
         setPosts(res.data);
       } catch (err: unknown) {
         if (
@@ -75,7 +75,7 @@ export default function MyPosts() {
     if (!pendingId || !pendingStatus) return;
     setUpdating(true);
     try {
-      await api.patch(`/api/posts/${pendingId}/status`, {
+      await api.patch(`/posts/${pendingId}/status`, {
         status: pendingStatus,
       });
       setPosts((prev) =>
@@ -110,7 +110,7 @@ export default function MyPosts() {
 
   const handleDelete = async (postId: number) => {
     try {
-      await api.delete(`/api/posts/${postId}`);
+      await api.delete(`/posts/${postId}`);
       setPosts((prev) => prev.filter((p) => p.id !== postId));
       toast.success("Post deleted!");
     } catch (err: unknown) {

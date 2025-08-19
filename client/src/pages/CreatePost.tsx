@@ -57,7 +57,7 @@ export default function CreatePost() {
     };
 
     try {
-      const res = await api.post("/api/posts", postData);
+      const res = await api.post("/posts", postData);
       navigate(`/posts/${res.data.id}`);
     } catch (err) {
       if (axios.isAxiosError(err)) {

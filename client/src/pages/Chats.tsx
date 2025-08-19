@@ -38,7 +38,7 @@ export default function Chats() {
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const res = await api.get("/api/chat/me");
+        const res = await api.get("/chat/me");
         setChats(res.data);
       } catch (err) {
         setError("Failed to load chats.");
@@ -71,7 +71,7 @@ export default function Chats() {
     if (!pendingId) return;
     setDeleting(true);
     try {
-      await api.delete(`/api/chat/${pendingId}`);
+      await api.delete(`/chat/${pendingId}`);
       setChats((prev) => prev.filter((c) => c.id !== pendingId));
       toast.success("Chat deleted");
       setConfirmOpen(false);
