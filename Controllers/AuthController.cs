@@ -48,7 +48,17 @@ public async Task<IActionResult> Register([FromBody] UserDto dto)
     }
 
     var token = _auth.GenerateJwtToken(user);
-    return Ok(new { token });
+    return Ok(new
+    {
+        token,
+        user = new
+        {
+            user.Id,
+            user.Email,
+            user.Username,
+            user.Location
+        }
+     });
 }
 
 [HttpPost("login")]

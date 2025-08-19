@@ -1,3 +1,4 @@
+// src/services/auth.ts
 import api from "../lib/api";
 import type { User } from "../types/User";
 
@@ -9,8 +10,9 @@ export interface LoginRequest {
   email: string;
   password: string;
 }
+
 export async function login(payload: LoginRequest) {
-  const res = await api.post<LoginResponse>("login", payload);
+  const res = await api.post<LoginResponse>("auth/login", payload);
   return res.data;
 }
 
@@ -20,7 +22,8 @@ export interface RegisterRequest {
   password: string;
   location: string;
 }
+
 export async function register(data: RegisterRequest): Promise<LoginResponse> {
-  const res = await api.post<LoginResponse>("register", data);
+  const res = await api.post<LoginResponse>("auth/register", data);
   return res.data;
 }
