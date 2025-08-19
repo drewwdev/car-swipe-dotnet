@@ -10,7 +10,7 @@ export interface LoginRequest {
   password: string;
 }
 export async function login(payload: LoginRequest) {
-  const res = await api.post<LoginResponse>("auth/login", payload);
+  const res = await api.post<LoginResponse>("login", payload);
   return res.data;
 }
 
@@ -21,6 +21,6 @@ export interface RegisterRequest {
   location: string;
 }
 export async function register(data: RegisterRequest): Promise<LoginResponse> {
-  const res = await api.post<LoginResponse>("auth/register", data);
+  const res = await api.post<LoginResponse>("register", data);
   return res.data;
 }

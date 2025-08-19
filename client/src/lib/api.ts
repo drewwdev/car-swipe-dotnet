@@ -1,16 +1,34 @@
 import axios from "axios";
 
-const rawBase =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5277/api";
-const baseURL = rawBase.replace(/\/+$/, "");
+function ensureTrailing(path: string, segment: string) {
+  const t = path.replace(/\/+$/, "");
+  return t.endsWith(segment) ? t : `${t}${segment}`;
+}
+
+const envBase = import.meta.env.VITE_API_BASE_URL?.toString().trim();
+
+const fallback = import.meta.env.DEV ? "/api" : `${window.location.origin}/api`;
+
+let base = (envBase && envBase.length > 0 ? envBase : fallback).replace(
+  /\/+$/,
+  ""
+);
+
+if (/car-swipe-api\.onrender\.com$/.test(base)) {
+  base = ensureTrailing(base, "/api");
+}
+
+try {
+  const u = new URL(base);
+  if (!u.pathname || u.pathname === "/") base = `${u.origin}/api`;
+} catch {
+  // If URL parsing fails, we assume the base is already correct
+}
 
 const api = axios.create({
-  baseURL,
+  baseURL: base,
   timeout: 15000,
-  headers: {
-    "Cache-Control": "no-cache",
-    Pragma: "no-cache",
-  },
+  headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
 });
 
 api.interceptors.request.use((config) => {
