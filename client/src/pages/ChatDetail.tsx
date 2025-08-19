@@ -114,14 +114,19 @@ export default function ChatDetail() {
   }, [chatId, token, chatIdNum]);
 
   useEffect(() => {
-    const baseUrl =
-      import.meta.env.VITE_API_BASE_URL ||
-      (window.location.protocol === "https:"
-        ? "https://localhost:7277"
-        : "http://localhost:5277");
+    const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(
+      /\/+$/,
+      ""
+    );
+
+    const hubBase = /\/api$/i.test(apiBase)
+      ? ""
+      : (apiBase || window.location.origin).replace(/\/+$/, "");
+
+    const hubUrl = `${hubBase}/chathub?chatId=${chatId}`;
 
     const hub = new signalR.HubConnectionBuilder()
-      .withUrl(`${baseUrl}/chathub?chatId=${chatId}`, {
+      .withUrl(hubUrl, {
         accessTokenFactory: () => localStorage.getItem("token") || "",
         withCredentials: true,
       })

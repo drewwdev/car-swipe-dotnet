@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import axios from "axios";
 import { useAuth } from "../context/useAuth";
 import { useNavigate } from "react-router-dom";
+import api from "../lib/api";
 import toast from "react-hot-toast";
 import PostImage from "../components/PostImage";
 import {
@@ -46,12 +46,9 @@ export default function Swipe() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await axios.get(
-          "http://localhost:5277/api/posts/available",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const res = await api.get("/posts/available", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         setPosts(res.data || []);
       } catch (err) {
         setError("Failed to load posts.");
@@ -63,12 +60,21 @@ export default function Swipe() {
     fetchPosts();
   }, [token]);
 
-  const fmtPrice = (n: number) =>
-    n.toLocaleString(undefined, {
+  const fmtPrice = (n?: number | null) => {
+    const v = Number(n);
+    if (!Number.isFinite(v)) return "—";
+    return v.toLocaleString(undefined, {
       style: "currency",
       currency: "USD",
       maximumFractionDigits: 0,
     });
+  };
+
+  const fmtMiles = (n?: number | null) => {
+    const v = Number(n);
+    if (!Number.isFinite(v)) return "—";
+    return v.toLocaleString() + " mi";
+  };
 
   const advance = () => setCurrentIndex((i) => i + 1);
 
@@ -77,8 +83,8 @@ export default function Swipe() {
       if (!currentPost || swiping) return;
       setSwiping(true);
       try {
-        const res = await axios.post(
-          "http://localhost:5277/api/swipes",
+        const res = await api.post(
+          "/swipes",
           {
             postId: currentPost.id,
             buyerId: user?.id,
@@ -165,7 +171,7 @@ export default function Swipe() {
                 className="w-full h-72 object-cover"
               />
               <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-slate-900">
-                {fmtPrice(currentPost.price)}
+                {fmtPrice(currentPost?.price)}
               </div>
             </div>
 
@@ -187,7 +193,7 @@ export default function Swipe() {
                   <DollarSign className="h-4 w-4 text-slate-900" />
                   <span className="flex-1">Price</span>
                   <span className="font-medium text-slate-900">
-                    {fmtPrice(currentPost.price)}
+                    {fmtPrice(currentPost?.price)}
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
@@ -201,7 +207,7 @@ export default function Swipe() {
                   <Gauge className="h-4 w-4 text-slate-900" />
                   <span className="flex-1">Mileage</span>
                   <span className="font-medium text-slate-900">
-                    {currentPost.mileage.toLocaleString()} mi
+                    {fmtMiles(currentPost?.mileage)}
                   </span>
                 </li>
                 <li className="flex items-center gap-2">
